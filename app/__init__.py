@@ -1,1 +1,1 @@
-"""Open Skills Day-1 workshop: job → build → prove → Keep / Throw away."""
+"""Open Skills Day-1 skill authoring: job → build → prove → Keep / Throw away."""

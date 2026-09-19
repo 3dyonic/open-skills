@@ -1,4 +1,4 @@
-"""Workshop contracts: job → build → prove → Keep writes pack / Throw away writes nothing."""
+"""Skill-authoring contracts: job → build → prove → Keep writes pack / Throw away writes nothing."""
 
 from __future__ import annotations
 

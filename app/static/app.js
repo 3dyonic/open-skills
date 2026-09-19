@@ -106,7 +106,7 @@
       card.innerHTML = `<span class="n">${item.n}</span><strong>${item.t}</strong><span>${item.d}</span>`;
       grid.appendChild(card);
     });
-    $("#start-workshop").addEventListener("click", () => {
+    $("#start-author").addEventListener("click", () => {
       state.screen = "job";
       renderJob();
     });

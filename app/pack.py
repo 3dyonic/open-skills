@@ -9,7 +9,7 @@ from app.skill_md import render_skill_md
 
 SCRIPTS_STUB = """#!/bin/sh
 # Progressive stub — open when the job needs a runnable helper.
-# Day-1: not executed by the workshop. Keep the SKILL.md body lean.
+# Day-1: not executed by the authoring host. Keep the SKILL.md body lean.
 set -eu
 echo "open-skills scripts stub"
 """

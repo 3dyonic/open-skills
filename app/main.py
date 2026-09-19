@@ -1,4 +1,4 @@
-"""Workshop host: job → build → prove → Keep writes pack / Throw away writes nothing."""
+"""Skill-authoring host: job → build → prove → Keep writes pack / Throw away writes nothing."""
 
 from __future__ import annotations
 

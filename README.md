@@ -1,8 +1,8 @@
 # Open Skills
 
-Day-1 workshop: **job → build → prove (teachable benchmarks) → Keep writes a skill pack / Throw away writes nothing.**
+Day-1 skill authoring: **job → build → prove (teachable benchmarks) → Keep writes a skill pack / Throw away writes nothing.**
 
-Tracker: [OSK-16](https://juice-engine.atlassian.net/browse/OSK-16). Craft SoT: [Workshop vision · artboard 1:2](https://www.figma.com/design/Xa60SjtMsUZDYcIQyCKr1j/Open-Skills-%C2%B7-workshop-vision?node-id=1-2).
+Tracker: [OSK-16](https://juice-engine.atlassian.net/browse/OSK-16). Craft SoT: [Figma artboard 1:2](https://www.figma.com/design/Xa60SjtMsUZDYcIQyCKr1j/Open-Skills-%C2%B7-workshop-vision?node-id=1-2).
 
 Not a marketplace, hub, Orchestra merge, OAuth invent, Open UX catalog clone, or the retired thin-gate mockup.
 
@@ -57,4 +57,4 @@ docker run --rm -p 8080:8080 -e SKILLS_DIR=/data/skills -v skills:/data/skills o
 
 ## Tokens
 
-Workshop vision tokens: paper `#F9F6F2` / ink `#1F1C16` / muted `#6A6056` / line `#DED4C8` / accent `#FF4B00`.
+Craft tokens: paper `#F9F6F2` / ink `#1F1C16` / muted `#6A6056` / line `#DED4C8` / accent `#FF4B00`.
