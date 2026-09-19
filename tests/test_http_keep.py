@@ -27,6 +27,10 @@ def test_http_keep_writes_skill_pack(client, skills_dir) -> None:
     assert proved.json()["benchmarks"]
     families = {row["family"] for row in proved.json()["benchmarks"]}
     assert families == {"wake", "output"}
+    report = proved.json()["prove_report"]
+    assert "wake" in report and "output" in report
+    assert "composite_0_100" not in report
+    assert all(row["evidence"]["fixture"] for row in proved.json()["benchmarks"])
     kept = client.post(f"/api/sessions/{sid}/keep")
     assert kept.status_code == 200
     body = kept.json()

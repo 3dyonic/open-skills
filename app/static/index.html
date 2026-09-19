@@ -101,39 +101,32 @@
       <div class="prove-head">
         <div>
           <p class="eyebrow">04 · PROVE</p>
-          <h1>Check wake + output relevance</h1>
+          <h1>Wake + Output evidence reports</h1>
         </div>
         <button type="button" class="btn btn-primary" id="run-check">Run check</button>
       </div>
-      <p class="lede tight">Wake recall/precision + output rubric via CLI (Pydantic). LLM fills the checklist; the CLI structures it. Composite weights are optional — not acceptance.</p>
+      <p class="lede tight">Separate Wake and Output reports with evidence on every case. Human Keep / Throw — no numeric floor.</p>
       <div class="prove-cols">
         <section class="col">
           <h2>WAKE</h2>
-          <label class="field-label" for="should">Recall · should</label>
+          <label class="field-label" for="should">Should</label>
           <textarea id="should" rows="3"></textarea>
-          <label class="field-label" for="should-not">Precision · should not</label>
+          <label class="field-label" for="should-not">Should not</label>
           <textarea id="should-not" rows="3"></textarea>
+          <label class="field-label" for="near-miss">Near-miss</label>
+          <textarea id="near-miss" rows="2"></textarea>
           <div class="col-results" id="wake-results"></div>
         </section>
         <section class="col">
           <h2>OUTPUT</h2>
-          <label class="field-label" for="relevant">Relevant</label>
-          <textarea id="relevant" rows="3"></textarea>
-          <label class="field-label" for="not-relevant">Not relevant</label>
-          <textarea id="not-relevant" rows="3"></textarea>
+          <label class="field-label" for="with-skill">With skill</label>
+          <textarea id="with-skill" rows="3"></textarea>
+          <label class="field-label" for="without-skill">Without skill</label>
+          <textarea id="without-skill" rows="3"></textarea>
           <div class="col-results" id="output-results"></div>
         </section>
       </div>
-      <div class="score-strip" id="score-strip" hidden>
-        <div class="score-main">
-          <p class="kicker muted">CHECKLIST</p>
-          <p class="score-num" id="score-num">Wake + Output</p>
-        </div>
-        <div class="score-chips" id="score-chips"></div>
-      </div>
-      <p class="note" id="composite-note" hidden></p>
-      <p class="note" id="teach-note">Why on fail shown under the failing check.</p>
-      <p class="teach-line">Near-miss teaches more than happy-path alone.</p>
+      <p class="note" id="prove-meta">Evidence-tied reports. P/R and trigger rates are observations, not a Keep floor.</p>
       <p class="error" id="prove-error" hidden></p>
       <div class="actions">
         <button type="button" class="btn btn-primary" id="prove-continue" disabled>Continue</button>

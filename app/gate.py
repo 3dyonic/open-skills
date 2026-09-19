@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 from app.methods import DS, fill_order, method_name
 from app.pack import pack_tree, write_pack
-from app.prove import ProveCLIError, run_prove
+from app.prove import ProveCLIError, flatten_cases, run_prove
 from app.skill_md import preview_sections, skill_name_from_job
 
 Step = Literal[
@@ -68,8 +68,12 @@ class Session:
     body: str = ""
     should: list[str] = field(default_factory=list)
     should_not: list[str] = field(default_factory=list)
+    near_miss: list[str] = field(default_factory=list)
     relevant: list[str] = field(default_factory=list)
     not_relevant: list[str] = field(default_factory=list)
+    with_skill: list[str] = field(default_factory=list)
+    without_skill: list[str] = field(default_factory=list)
+    runs: int = 1
     benchmarks: list[dict[str, Any]] = field(default_factory=list)
     prove_report: dict[str, Any] | None = None
     proved: bool = False
@@ -112,8 +116,11 @@ class Session:
             "body": self.body,
             "should": self.should,
             "should_not": self.should_not,
+            "near_miss": self.near_miss,
             "relevant": self.relevant,
             "not_relevant": self.not_relevant,
+            "with_skill": self.with_skill,
+            "without_skill": self.without_skill,
             "sections": {k: v.as_dict() for k, v in self.sections.items()},
             "depth": self.depth.as_dict(),
         }
@@ -130,8 +137,12 @@ class Session:
             "body": self.body,
             "should": list(self.should),
             "should_not": list(self.should_not),
+            "near_miss": list(self.near_miss),
             "relevant": list(self.relevant),
             "not_relevant": list(self.not_relevant),
+            "with_skill": list(self.with_skill),
+            "without_skill": list(self.without_skill),
+            "runs": self.runs,
             "benchmarks": list(self.benchmarks),
             "prove_report": self.prove_report,
             "proved": self.proved,
@@ -177,8 +188,12 @@ class Store:
         method: str | None = None,
         should: list[str] | None = None,
         should_not: list[str] | None = None,
+        near_miss: list[str] | None = None,
         relevant: list[str] | None = None,
         not_relevant: list[str] | None = None,
+        with_skill: list[str] | None = None,
+        without_skill: list[str] | None = None,
+        runs: int | None = None,
         depth: dict[str, bool] | None = None,
         continue_to_prove: bool = False,
     ) -> Session:
@@ -200,10 +215,24 @@ class Store:
             session.should = _clean_list(should)
         if should_not is not None:
             session.should_not = _clean_list(should_not)
+        if near_miss is not None:
+            session.near_miss = _clean_list(near_miss)
         if relevant is not None:
             session.relevant = _clean_list(relevant)
+            if with_skill is None and not session.with_skill:
+                session.with_skill = list(session.relevant)
         if not_relevant is not None:
             session.not_relevant = _clean_list(not_relevant)
+            if without_skill is None and not session.without_skill:
+                session.without_skill = list(session.not_relevant)
+        if with_skill is not None:
+            session.with_skill = _clean_list(with_skill)
+            session.relevant = list(session.with_skill)
+        if without_skill is not None:
+            session.without_skill = _clean_list(without_skill)
+            session.not_relevant = list(session.without_skill)
+        if runs is not None:
+            session.runs = max(1, min(int(runs), 32))
         if depth is not None:
             session.depth = Depth(
                 nested=bool(depth.get("nested")),
@@ -247,8 +276,12 @@ class Store:
         not_when: str | None = None,
         should: list[str] | None = None,
         should_not: list[str] | None = None,
+        near_miss: list[str] | None = None,
         relevant: list[str] | None = None,
         not_relevant: list[str] | None = None,
+        with_skill: list[str] | None = None,
+        without_skill: list[str] | None = None,
+        runs: int | None = None,
         continue_to_dispose: bool = False,
     ) -> Session:
         if session.disposed:
@@ -261,20 +294,36 @@ class Store:
             session.should = _clean_list(should)
         if should_not is not None:
             session.should_not = _clean_list(should_not)
+        if near_miss is not None:
+            session.near_miss = _clean_list(near_miss)
         if relevant is not None:
             session.relevant = _clean_list(relevant)
+            if with_skill is None:
+                session.with_skill = list(session.relevant)
         if not_relevant is not None:
             session.not_relevant = _clean_list(not_relevant)
+            if without_skill is None:
+                session.without_skill = list(session.not_relevant)
+        if with_skill is not None:
+            session.with_skill = _clean_list(with_skill)
+            session.relevant = list(session.with_skill)
+        if without_skill is not None:
+            session.without_skill = _clean_list(without_skill)
+            session.not_relevant = list(session.without_skill)
+        if runs is not None:
+            session.runs = max(1, min(int(runs), 32))
         self._require_trigger(session)
-        if not session.should or not session.should_not:
+        if not session.should or not (session.should_not or session.near_miss):
             raise GateError(
                 "empty_benchmarks",
-                "Prove needs at least one should-wake and one should-not prompt.",
+                "Prove needs at least one should-wake and one should-not or near-miss prompt.",
             )
-        if not session.relevant:
-            session.relevant = [f"Drafted output for this job: {session.job}"]
-        if not session.not_relevant:
-            session.not_relevant = ["A 1200-word blog post about our product launch."]
+        if not session.with_skill and not session.relevant:
+            session.with_skill = [f"Drafted output for this job: {session.job}"]
+            session.relevant = list(session.with_skill)
+        if not session.without_skill and not session.not_relevant:
+            session.without_skill = ["A 1200-word blog post about our product launch."]
+            session.not_relevant = list(session.without_skill)
         try:
             report = run_prove(
                 job=session.job,
@@ -282,14 +331,18 @@ class Store:
                 not_when=session.not_when,
                 should=session.should,
                 should_not=session.should_not,
+                near_miss=session.near_miss,
                 relevant=session.relevant,
                 not_relevant=session.not_relevant,
+                with_skill=session.with_skill,
+                without_skill=session.without_skill,
                 body=session.body,
+                runs=session.runs,
             )
         except ProveCLIError as exc:
             raise GateError("cli_failed", str(exc)) from exc
         session.prove_report = report.model_dump()
-        session.benchmarks = [row.model_dump() for row in report.cases]
+        session.benchmarks = flatten_cases(report)
         session.proved = True
         session.step = "dispose" if continue_to_dispose else "prove"
         return session
@@ -316,7 +369,7 @@ class Store:
             raise GateError("already_kept", "Session already kept.")
         self._require_trigger(session, code="empty_trigger")
         if not session.proved:
-            raise GateError("not_proved", "Prove the trigger before Keep.")
+            raise GateError("not_proved", "Run Wake + Output evidence reports before Keep.")
         path = write_pack(session.preview_session(), skills_dir)
         session.disposed = "keep"
         session.written_path = str(path)

@@ -79,24 +79,22 @@ def stub_fill(session: Session, method_id: str, cite: AcademyCite) -> str:
     )
 
 
-def stub_prompts(session: Session) -> tuple[list[str], list[str]]:
+def stub_prompts(session: Session) -> tuple[list[str], list[str], list[str]]:
     job = " ".join(session.job.split())
     should = [
         f"Help me do this job now: {job}",
         f"I keep redoing this; capture it as a skill: {job}",
     ]
-    should_not = [
-        "Write a blog post about our product launch.",
-        "Summarize this meeting for the team.",
-    ]
-    return should, should_not
+    should_not = ["Write a blog post about our product launch."]
+    near_miss = ["Summarize this meeting for the team."]
+    return should, should_not, near_miss
 
 
 def stub_outputs(session: Session) -> tuple[list[str], list[str]]:
     job = " ".join(session.job.split())
-    relevant = [f"Drafted output for this job: {job}"]
-    not_relevant = ["A 1200-word blog post about our product launch."]
-    return relevant, not_relevant
+    with_skill = [f"Drafted output for this job: {job}"]
+    without_skill = ["A 1200-word blog post about our product launch."]
+    return with_skill, without_skill
 
 
 def fill_section(session: Session, method_id: str, cite: AcademyCite) -> str:
@@ -123,18 +121,25 @@ def draft_build(session: Session, cite: AcademyCite) -> Session:
         session.not_when = stub_not_when(session.job)
     if not session.body:
         session.body = stub_body(session, cite)
-    if not session.should or not session.should_not:
-        should, should_not = refine_prompts(session, cite)
+    if not session.should or not (session.should_not or session.near_miss):
+        should, should_not, near_miss = refine_prompts(session, cite)
         if not session.should:
             session.should = should
         if not session.should_not:
             session.should_not = should_not
-    if not session.relevant or not session.not_relevant:
-        relevant, not_relevant = stub_outputs(session)
-        if not session.relevant:
-            session.relevant = relevant
-        if not session.not_relevant:
-            session.not_relevant = not_relevant
+        if not session.near_miss:
+            session.near_miss = near_miss
+    if not session.with_skill and not session.relevant:
+        with_skill, without_skill = stub_outputs(session)
+        session.with_skill = with_skill
+        session.relevant = list(with_skill)
+        if not session.without_skill and not session.not_relevant:
+            session.without_skill = without_skill
+            session.not_relevant = list(without_skill)
+    elif not session.without_skill and not session.not_relevant:
+        _with, without_skill = stub_outputs(session)
+        session.without_skill = without_skill
+        session.not_relevant = list(without_skill)
     method_id = session.method or "description"
     if session.sections[method_id].status == "empty":
         session.sections[method_id].status = "filled"
@@ -142,12 +147,11 @@ def draft_build(session: Session, cite: AcademyCite) -> Session:
     return session
 
 
-def refine_prompts(session: Session, cite: AcademyCite) -> tuple[list[str], list[str]]:
+def refine_prompts(session: Session, cite: AcademyCite) -> tuple[list[str], list[str], list[str]]:
     prompt = (
         "Propose trigger-proof prompts for a skill. Return JSON only:\n"
-        '{"should":["...","..."],"should_not":["...","..."]}\n'
-        "Two should (on-trigger) and two should-not (near-miss) lines.\n"
-        "Include one near-miss that a vague wake line would wrongly fire on.\n"
+        '{"should":["..."],"should_not":["..."],"near_miss":["..."]}\n'
+        "One should (on-trigger), one should-not, one near-miss.\n"
         f"Job: {session.job}\n"
         f"When: {session.when}\n"
         f"Not when: {session.not_when}\n"
@@ -162,8 +166,9 @@ def refine_prompts(session: Session, cite: AcademyCite) -> tuple[list[str], list
             data: dict[str, Any] = json.loads(text[start : end + 1])
             should = [str(x).strip() for x in data.get("should", []) if str(x).strip()]
             should_not = [str(x).strip() for x in data.get("should_not", []) if str(x).strip()]
-            if len(should) >= 1 and len(should_not) >= 1:
-                return should[:2], should_not[:2]
+            near_miss = [str(x).strip() for x in data.get("near_miss", []) if str(x).strip()]
+            if len(should) >= 1 and (should_not or near_miss):
+                return should[:2], should_not[:2], near_miss[:2]
         except (json.JSONDecodeError, ValueError, TypeError):
             pass
     return stub_prompts(session)

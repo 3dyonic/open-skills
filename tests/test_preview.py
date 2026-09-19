@@ -60,8 +60,9 @@ def test_ui_is_skill_authoring_playground_not_workshop() -> None:
     assert "Run check" in html
     assert "id=\"run-check\"" in html
     assert "Prove trigger" not in html
-    assert "on_job" in html or "on_job" in js
-    assert "cites_skill_steps" in js
+    assert "with-skill" in html
+    assert "near-miss" in html
+    assert "evidence" in js
 
 
 def test_ui_cites_lean_frames_not_opus() -> None:

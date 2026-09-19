@@ -169,8 +169,9 @@
             method: $("#method").value,
             should: state.session.should,
             should_not: state.session.should_not,
-            relevant: state.session.relevant,
-            not_relevant: state.session.not_relevant,
+            near_miss: state.session.near_miss,
+            with_skill: state.session.with_skill || state.session.relevant,
+            without_skill: state.session.without_skill || state.session.not_relevant,
             depth: {
               nested: !!$("#depth-nested")?.checked,
               tools: !!$("#depth-tools")?.checked,
@@ -191,8 +192,9 @@
     mount("tpl-prove");
     $("#should").value = (state.session.should || []).join("\n");
     $("#should-not").value = (state.session.should_not || []).join("\n");
-    $("#relevant").value = (state.session.relevant || []).join("\n");
-    $("#not-relevant").value = (state.session.not_relevant || []).join("\n");
+    $("#near-miss").value = (state.session.near_miss || []).join("\n");
+    $("#with-skill").value = (state.session.with_skill || state.session.relevant || []).join("\n");
+    $("#without-skill").value = (state.session.without_skill || state.session.not_relevant || []).join("\n");
     paintProve();
     $("#prove-continue").disabled = !state.session.proved;
     $("#run-check").addEventListener("click", () => runProve(false));
@@ -210,8 +212,9 @@
           not_when: state.session.not_when,
           should: lines($("#should").value),
           should_not: lines($("#should-not").value),
-          relevant: lines($("#relevant").value),
-          not_relevant: lines($("#not-relevant").value),
+          near_miss: lines($("#near-miss").value),
+          with_skill: lines($("#with-skill").value),
+          without_skill: lines($("#without-skill").value),
           continue_to_dispose: continueToDispose,
         }),
       });
@@ -231,29 +234,26 @@
   function paintCard(row) {
     const card = document.createElement("article");
     card.className = "case-card";
+    const ev = row.evidence || {};
+    const fixture = ev.fixture || row.prompt || row.sample || "";
     card.innerHTML = `
       <span class="badge"></span>
       <p class="prompt"></p>
       <p class="verdict"></p>
-      <ul class="rubric"></ul>
-      <p class="why"></p>
-      <p class="teach"></p>`;
-    card.querySelector(".badge").textContent = row.badge;
-    card.querySelector(".prompt").textContent = `“${row.prompt}”`;
-    card.querySelector(".verdict").textContent = row.verdict;
-    const list = card.querySelector(".rubric");
-    if (row.rubric) {
-      ["on_job", "complete", "safe", "cites_skill_steps"].forEach((key) => {
-        const item = row.rubric[key];
-        if (!item) return;
-        const li = document.createElement("li");
-        li.dataset.ok = item.passed ? "1" : "0";
-        li.textContent = item.passed ? key : `${key} — ${item.why}`;
-        list.appendChild(li);
-      });
-    }
-    card.querySelector(".why").textContent = row.passed ? "" : row.why;
-    card.querySelector(".teach").textContent = row.passed ? "" : row.teach;
+      <p class="evidence"></p>
+      <p class="why"></p>`;
+    card.querySelector(".badge").textContent = row.badge || row.kind || "";
+    card.querySelector(".prompt").textContent = `“${fixture}”`;
+    card.querySelector(".verdict").textContent = row.verdict || "";
+    const bits = [];
+    if (row.trigger_rate != null) bits.push(`trigger_rate ${row.trigger_rate} (${row.woke_count || 0}/${row.runs || 1})`);
+    if (row.judge) bits.push(`judge ${row.judge}`);
+    if (ev.hits && ev.hits.length) bits.push(`hits ${ev.hits.slice(0, 6).join(", ")}`);
+    if (ev.against) bits.push(`against ${ev.against}`);
+    if (ev.source) bits.push(ev.source);
+    card.querySelector(".evidence").textContent = bits.join(" · ");
+    const ok = row.matched != null ? row.matched : row.passed;
+    card.querySelector(".why").textContent = ok ? "" : row.why || "";
     return card;
   }
 
@@ -263,42 +263,17 @@
     if (!wakeBox || !outBox) return;
     wakeBox.replaceChildren();
     outBox.replaceChildren();
-    (state.session.benchmarks || []).forEach((row) => {
-      const card = paintCard(row);
-      (row.family === "output" ? outBox : wakeBox).appendChild(card);
-    });
-    const report = state.session.prove_report;
-    const strip = $("#score-strip");
-    const chipsBox = $("#score-chips");
-    if (!report || !strip) return;
-    strip.hidden = false;
-    const recall = report.wake_recall || {};
-    const precision = report.wake_precision || {};
-    $("#score-num").textContent = `Recall ${recall.passed || 0}/${recall.total || 0} · Precision ${precision.passed || 0}/${precision.total || 0}`;
-    chipsBox.replaceChildren();
-    const rubric = report.output_rubric || {};
-    ["on_job", "complete", "safe", "cites_skill_steps"].forEach((key) => {
-      const vert = rubric[key];
-      if (!vert) return;
-      const chip = document.createElement("span");
-      chip.className = "score-chip";
-      chip.textContent = `${key} ${vert.passed}/${vert.total}`;
-      chipsBox.appendChild(chip);
-    });
-    const composite = $("#composite-note");
-    if (composite) {
-      if (report.composite_0_100 == null) {
-        composite.hidden = true;
-      } else {
-        composite.hidden = false;
-        composite.textContent = `Optional composite ${report.composite_0_100}/100 — not acceptance.`;
-      }
-    }
-    const note = $("#teach-note");
-    if (note) {
-      note.textContent = report.teachability_ok
-        ? "Why on fail shown under the failing check."
-        : "Teachability gate failed — every failure needs a why.";
+    const report = state.session.prove_report || {};
+    const wakeCases = report.wake?.cases || (state.session.benchmarks || []).filter((r) => r.family === "wake");
+    const outCases = report.output?.cases || (state.session.benchmarks || []).filter((r) => r.family === "output");
+    wakeCases.forEach((row) => wakeBox.appendChild(paintCard(row)));
+    outCases.forEach((row) => outBox.appendChild(paintCard(row)));
+    const meta = $("#prove-meta");
+    if (meta && report.wake) {
+      const r = report.wake.recall;
+      const p = report.wake.precision;
+      const honest = report.wake.harness_honesty ? "honest" : "inconsistent";
+      meta.textContent = `Wake P/R (observation only): recall ${r ?? "—"} · precision ${p ?? "—"} · harness ${honest}. Human Keep / Throw — no numeric floor.`;
     }
   }
 

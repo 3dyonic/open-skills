@@ -322,7 +322,7 @@ textarea { resize: vertical; }
 .rubric li[data-ok="0"] { color: var(--accent); }
 
 .case-card .why,
-.case-card .teach { margin: 0; font-size: 12px; line-height: 18px; color: var(--muted); }
+.case-card .evidence { margin: 0; font-size: 12px; line-height: 18px; color: var(--muted); }
 
 .score-strip {
   display: flex;

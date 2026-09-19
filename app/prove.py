@@ -1,4 +1,4 @@
-"""Shell out to the rank/prove CLI. No in-app eval suite."""
+"""Shell out to the rank/prove CLI. No in-app eval suite. No keep/kill floors."""
 
 from __future__ import annotations
 
@@ -44,7 +44,22 @@ def _run(command: str, payload: dict[str, Any]) -> dict[str, Any]:
     data = json.loads(proc.stdout)
     if data.get("via") != "cli":
         raise ProveCLIError("CLI response missing via=cli")
+    if "wake" not in data or "output" not in data:
+        raise ProveCLIError("CLI response missing wake/output")
     return data
+
+
+def flatten_cases(report: ProveReport) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for case in report.wake.cases:
+        row = case.model_dump()
+        row["passed"] = case.matched
+        rows.append(row)
+    for case in report.output.cases:
+        row = case.model_dump()
+        row["prompt"] = case.sample
+        rows.append(row)
+    return rows
 
 
 def run_prove(
@@ -54,10 +69,13 @@ def run_prove(
     not_when: str,
     should: list[str],
     should_not: list[str],
+    near_miss: list[str] | None = None,
     relevant: list[str] | None = None,
     not_relevant: list[str] | None = None,
+    with_skill: list[str] | None = None,
+    without_skill: list[str] | None = None,
     body: str = "",
-    weights: dict[str, int] | None = None,
+    runs: int = 1,
 ) -> ProveReport:
     req = ProveRequest(
         job=job,
@@ -66,9 +84,12 @@ def run_prove(
         body=body,
         should=should,
         should_not=should_not,
+        near_miss=near_miss or [],
+        with_skill=with_skill or [],
+        without_skill=without_skill or [],
         relevant=relevant or [],
         not_relevant=not_relevant or [],
-        weights=weights,
+        runs=runs,
     )
     data = _run("prove", req.model_dump())
     return ProveReport.model_validate(data)
@@ -82,7 +103,7 @@ def run_rank(
     not_when: str,
     prompts: list[str],
     body: str = "",
-    weights: dict[str, int] | None = None,
+    runs: int = 1,
 ) -> list[dict[str, Any]]:
     req = RankRequest(
         family=family,  # type: ignore[arg-type]
@@ -91,7 +112,7 @@ def run_rank(
         not_when=not_when,
         body=body,
         prompts=prompts,
-        weights=weights,
+        runs=runs,
     )
     data = _run("rank", req.model_dump())
     report = ProveReport.model_validate(data)

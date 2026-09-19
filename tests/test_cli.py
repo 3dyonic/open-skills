@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 from app.prove import run_rank
-from app.scheme import RUBRIC_KEYS
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -17,8 +16,10 @@ def test_cli_prove_subprocess() -> None:
         "body": "Draft the notes from the PR diff.",
         "should": ["Draft release notes from this PR diff for the changelog."],
         "should_not": ["Write a blog post about our product launch."],
-        "relevant": ["Changelog notes from the PR diff."],
-        "not_relevant": ["A 1200-word blog post about our product launch."],
+        "near_miss": ["Summarize this meeting for the team."],
+        "with_skill": ["Changelog notes from the PR diff."],
+        "without_skill": ["A 1200-word blog post about our product launch."],
+        "runs": 3,
     }
     proc = subprocess.run(
         [sys.executable, "-m", "app.cli", "prove"],
@@ -30,13 +31,12 @@ def test_cli_prove_subprocess() -> None:
     )
     data = json.loads(proc.stdout)
     assert data["via"] == "cli"
-    families = {row["family"] for row in data["cases"]}
-    assert families == {"wake", "output"}
-    assert data["composite_0_100"] is None
-    assert data["teachability_ok"] is True
-    assert set(data["output_rubric"]) == set(RUBRIC_KEYS)
-    output = [row for row in data["cases"] if row["family"] == "output"]
-    assert all(row["rubric"] and set(row["rubric"]) >= set(RUBRIC_KEYS) for row in output)
+    assert "wake" in data and "output" in data
+    assert "composite_0_100" not in data
+    assert data["wake"]["cases"][0]["runs"] == 3
+    assert data["wake"]["cases"][0]["evidence"]["fixture"]
+    assert data["output"]["cases"][0]["judge"] in {"deterministic", "llm"}
+    assert data["output"]["cases"][0]["assertions"]
 
 
 def test_cli_rank_orders_by_score() -> None:
@@ -53,3 +53,4 @@ def test_cli_rank_orders_by_score() -> None:
     assert ranked[0]["positive"] is True
     assert ranked[0]["score"] >= ranked[-1]["score"]
     assert all(item["family"] == "wake" for item in ranked)
+    assert all(item["evidence"]["fixture"] for item in ranked)
