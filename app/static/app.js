@@ -1,34 +1,34 @@
 (() => {
   const FLOW = [
-    { id: "start", n: "1", t: "Start", d: "Empty state — make a skill that knows when to help" },
-    { id: "job", n: "2", t: "Describe", d: "Say the job in plain words" },
-    { id: "build", n: "3", t: "Build", d: "Steer method, body, nested pieces" },
-    { id: "prove", n: "4", t: "Prove", d: "Should wake / should not — with why" },
-    { id: "dispose", n: "5", t: "Keep / Throw", d: "Sacred dispose gate" },
-    { id: "done", n: "6", t: "Done", d: "Path to pack — or nothing saved" },
+    { id: "start", t: "Start" },
+    { id: "describe", t: "Describe" },
+    { id: "build", t: "Build" },
+    { id: "prove", t: "Prove" },
+    { id: "dispose", t: "Keep/Throw" },
+    { id: "done", t: "Done" },
   ];
 
   const NAV = {
-    start: "1 · Start",
-    job: "2 · Describe",
-    build: "3 · Build",
-    prove: "4 · Prove",
-    dispose: "5 · Keep / Throw",
-    done_keep: "6 · Done",
-    done_throw: "6 · Done",
+    start: "01 · Start",
+    describe: "02 · Describe",
+    build: "03 · Build",
+    prove: "04 · Prove",
+    dispose: "05 · Keep / Throw",
+    done_keep: "06 · Done",
+    done_throw: "06 · Done",
   };
 
   const state = {
     session: null,
-    methods: null,
-    picked: "description",
+    jobDraft: "",
     screen: "start",
+    hold: null,
   };
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const app = $("#app");
   const navStep = $("#nav-step");
-  const rail = $("#rail");
+  const chips = $("#chips");
 
   async function api(path, opts = {}) {
     const res = await fetch(path, {
@@ -55,109 +55,99 @@
       .filter(Boolean);
   }
 
-  function paintRail() {
+  function currentChip() {
+    if (state.hold === "describe") return "describe";
     const step = state.session?.step || state.screen;
-    const current =
-      step === "done_keep" || step === "done_throw" ? "done" : step === "start" || !state.session ? "start" : step;
-    rail.replaceChildren();
-    FLOW.forEach((item) => {
+    if (step === "done_keep" || step === "done_throw") return "done";
+    if (step === "job" || !state.session) return "start";
+    return step;
+  }
+
+  function paintChips() {
+    const current = currentChip();
+    chips.replaceChildren();
+    FLOW.forEach((item, i) => {
       const li = document.createElement("li");
       const btn = document.createElement("button");
       btn.type = "button";
       btn.dataset.on = item.id === current ? "1" : "0";
-      btn.innerHTML = `<span class="n">${item.n}</span><span class="t">${item.t}</span><span class="d">${item.d}</span>`;
+      btn.textContent = item.t;
       li.appendChild(btn);
-      rail.appendChild(li);
+      if (i < FLOW.length - 1) {
+        const arrow = document.createElement("span");
+        arrow.className = "arrow";
+        arrow.textContent = "→";
+        li.appendChild(arrow);
+      }
+      chips.appendChild(li);
     });
   }
 
-  function paintPack(el, session) {
-    if (!el || !session) return;
-    const tree = (session.pack_tree || []).join("\n");
-    el.innerHTML = `<p class="kicker"></p><h2></h2><pre></pre>`;
-    el.querySelector(".kicker").textContent =
-      session.disposed === "keep" ? "SKILL PACK  ·  AFTER KEEP" : "SKILL PACK  ·  ONLY AFTER KEEP";
-    el.querySelector("h2").textContent = `${session.name}/`;
-    el.querySelector("pre").textContent = tree.split("\n").slice(1).join("\n");
-  }
-
   function render() {
-    const step = state.session?.step || state.screen || "start";
+    const step = state.hold || state.session?.step || state.screen || "start";
     navStep.textContent = NAV[step] || NAV.start;
-    paintRail();
-    if (!state.session || step === "job") return renderJob();
+    paintChips();
+    if (state.hold === "describe" || step === "describe") return renderDescribe();
+    if (!state.session || step === "start" || step === "job") return renderStart();
     if (step === "build") return renderBuild();
     if (step === "prove") return renderProve();
     if (step === "dispose") return renderDispose();
-    if (step === "done_keep") return renderDoneKeep();
-    if (step === "done_throw") return renderDoneThrow();
+    if (step === "done_keep" || step === "done_throw") return renderDone();
     return renderStart();
   }
 
   function renderStart() {
     state.screen = "start";
+    state.hold = null;
     navStep.textContent = NAV.start;
-    paintRail();
+    paintChips();
     mount("tpl-start");
-    const grid = $("#start-flow");
-    FLOW.forEach((item) => {
-      const card = document.createElement("article");
-      card.className = "flow-card";
-      card.innerHTML = `<span class="n">${item.n}</span><strong>${item.t}</strong><span>${item.d}</span>`;
-      grid.appendChild(card);
-    });
-    $("#start-author").addEventListener("click", () => {
-      state.screen = "job";
-      renderJob();
-    });
-  }
-
-  function renderJob() {
-    mount("tpl-job");
-    const ta = $("#job");
-    if (state.session?.job) ta.value = state.session.job;
-    $("#job-continue").addEventListener("click", async (e) => {
-      const job = ta.value.trim();
+    const input = $("#job");
+    input.value = state.jobDraft || state.session?.job || "";
+    const go = async (e) => {
+      const job = input.value.trim();
       if (!job) {
-        ta.focus();
+        input.focus();
         return;
       }
+      state.jobDraft = job;
       e.currentTarget.disabled = true;
       try {
         state.session = await api("/api/sessions", {
           method: "POST",
           body: JSON.stringify({ job }),
         });
-        state.picked = state.session.method || "description";
+        state.hold = "describe";
         render();
       } catch (err) {
         alert(err.message);
         e.currentTarget.disabled = false;
       }
+    };
+    $("#start-continue").addEventListener("click", go);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        $("#start-continue").click();
+      }
+    });
+  }
+
+  function renderDescribe() {
+    mount("tpl-describe");
+    const job = state.session?.job || state.jobDraft || "";
+    $("#describe-job").textContent = job;
+    $("#describe-name").textContent = state.session?.name || "—";
+    $("#describe-wake").textContent = state.session?.when || job;
+    $("#describe-continue").addEventListener("click", () => {
+      state.hold = null;
+      render();
     });
   }
 
   function renderBuild() {
     mount("tpl-build");
-    const cite = state.methods?.citation;
-    if (cite) {
-      const a = $("#academy-cite");
-      a.href = cite.url;
-      a.textContent = cite.label;
-    }
-    state.picked = state.session.method || state.picked || "description";
-    const cards = $("#method-cards");
-    (state.methods?.methods || []).forEach((m) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "card" + (state.picked === m.id ? " sel" : "");
-      btn.innerHTML = `<strong>${m.name}</strong><span>${m.card}</span>`;
-      btn.addEventListener("click", () => {
-        state.picked = m.id;
-        renderBuild();
-      });
-      cards.appendChild(btn);
-    });
+    $("#method").value = state.session.method || "description";
     $("#when").value = state.session.when || "";
     $("#not-when").value = state.session.not_when || "";
     $("#body").value = state.session.body || "";
@@ -167,13 +157,27 @@
     if (state.session.depth?.nested || state.session.depth?.tools || state.session.depth?.scripts) {
       $("#depth-panel").open = true;
     }
-    paintPack($("#build-pack"), state.session);
     $("#build-continue").addEventListener("click", async (e) => {
       e.currentTarget.disabled = true;
       try {
         state.session = await api(`/api/sessions/${state.session.id}/build`, {
           method: "POST",
-          body: JSON.stringify(buildPayload(true)),
+          body: JSON.stringify({
+            when: $("#when").value,
+            not_when: $("#not-when").value,
+            body: $("#body").value,
+            method: $("#method").value,
+            should: state.session.should,
+            should_not: state.session.should_not,
+            relevant: state.session.relevant,
+            not_relevant: state.session.not_relevant,
+            depth: {
+              nested: !!$("#depth-nested")?.checked,
+              tools: !!$("#depth-tools")?.checked,
+              scripts: !!$("#depth-scripts")?.checked,
+            },
+            continue_to_prove: true,
+          }),
         });
         render();
       } catch (err) {
@@ -183,34 +187,13 @@
     });
   }
 
-  function buildPayload(continueToProve) {
-    return {
-      when: $("#when").value,
-      not_when: $("#not-when").value,
-      body: $("#body") ? $("#body").value : state.session.body,
-      method: state.picked,
-      should: state.session.should,
-      should_not: state.session.should_not,
-      relevant: state.session.relevant,
-      not_relevant: state.session.not_relevant,
-      depth: {
-        nested: !!$("#depth-nested")?.checked,
-        tools: !!$("#depth-tools")?.checked,
-        scripts: !!$("#depth-scripts")?.checked,
-      },
-      continue_to_prove: !!continueToProve,
-    };
-  }
-
   function renderProve() {
     mount("tpl-prove");
-    $("#when").value = state.session.when || "";
-    $("#not-when").value = state.session.not_when || "";
     $("#should").value = (state.session.should || []).join("\n");
     $("#should-not").value = (state.session.should_not || []).join("\n");
     $("#relevant").value = (state.session.relevant || []).join("\n");
     $("#not-relevant").value = (state.session.not_relevant || []).join("\n");
-    paintBench();
+    paintProve();
     $("#prove-continue").disabled = !state.session.proved;
     $("#run-check").addEventListener("click", () => runProve(false));
     $("#prove-continue").addEventListener("click", () => runProve(true));
@@ -223,8 +206,8 @@
       state.session = await api(`/api/sessions/${state.session.id}/prove`, {
         method: "POST",
         body: JSON.stringify({
-          when: $("#when").value,
-          not_when: $("#not-when").value,
+          when: state.session.when,
+          not_when: state.session.not_when,
           should: lines($("#should").value),
           should_not: lines($("#should-not").value),
           relevant: lines($("#relevant").value),
@@ -233,7 +216,7 @@
         }),
       });
       if (continueToDispose) return render();
-      paintBench();
+      paintProve();
       $("#prove-continue").disabled = !state.session.proved;
     } catch (e) {
       if (err) {
@@ -245,35 +228,82 @@
     }
   }
 
-  function paintBench() {
-    const box = $("#bench");
-    if (!box) return;
-    box.replaceChildren();
+  function paintCard(row) {
+    const card = document.createElement("article");
+    card.className = "case-card";
+    card.innerHTML = `
+      <span class="badge"></span>
+      <p class="prompt"></p>
+      <p class="verdict"></p>
+      <ul class="rubric"></ul>
+      <p class="why"></p>
+      <p class="teach"></p>`;
+    card.querySelector(".badge").textContent = row.badge;
+    card.querySelector(".prompt").textContent = `“${row.prompt}”`;
+    card.querySelector(".verdict").textContent = row.verdict;
+    const list = card.querySelector(".rubric");
+    if (row.rubric) {
+      ["on_job", "complete", "safe", "cites_skill_steps"].forEach((key) => {
+        const item = row.rubric[key];
+        if (!item) return;
+        const li = document.createElement("li");
+        li.dataset.ok = item.passed ? "1" : "0";
+        li.textContent = item.passed ? key : `${key} — ${item.why}`;
+        list.appendChild(li);
+      });
+    }
+    card.querySelector(".why").textContent = row.passed ? "" : row.why;
+    card.querySelector(".teach").textContent = row.passed ? "" : row.teach;
+    return card;
+  }
+
+  function paintProve() {
+    const wakeBox = $("#wake-results");
+    const outBox = $("#output-results");
+    if (!wakeBox || !outBox) return;
+    wakeBox.replaceChildren();
+    outBox.replaceChildren();
     (state.session.benchmarks || []).forEach((row) => {
-      const card = document.createElement("article");
-      card.className = "bench-card";
-      const kind = row.badge === "SHOULD WAKE" || row.badge === "RELEVANT" ? "should" : row.badge === "SHOULD NOT" || row.badge === "NOT RELEVANT" ? "should-not" : "fail";
-      const family = row.family === "output" ? "Output" : "Wake";
-      card.innerHTML = `
-        <p class="learn-kicker"></p>
-        <span class="badge badge-${kind}"></span>
-        <p class="prompt"></p>
-        <p class="verdict"></p>
-        <p class="why"></p>
-        <p class="teach"></p>`;
-      card.querySelector(".learn-kicker").textContent = family;
-      card.querySelector(".badge").textContent = row.badge;
-      card.querySelector(".prompt").textContent = `“${row.prompt}”`;
-      card.querySelector(".verdict").textContent = row.verdict;
-      card.querySelector(".why").textContent = row.why;
-      card.querySelector(".teach").textContent = row.teach;
-      box.appendChild(card);
+      const card = paintCard(row);
+      (row.family === "output" ? outBox : wakeBox).appendChild(card);
     });
+    const report = state.session.prove_report;
+    const strip = $("#score-strip");
+    const chipsBox = $("#score-chips");
+    if (!report || !strip) return;
+    strip.hidden = false;
+    const recall = report.wake_recall || {};
+    const precision = report.wake_precision || {};
+    $("#score-num").textContent = `Recall ${recall.passed || 0}/${recall.total || 0} · Precision ${precision.passed || 0}/${precision.total || 0}`;
+    chipsBox.replaceChildren();
+    const rubric = report.output_rubric || {};
+    ["on_job", "complete", "safe", "cites_skill_steps"].forEach((key) => {
+      const vert = rubric[key];
+      if (!vert) return;
+      const chip = document.createElement("span");
+      chip.className = "score-chip";
+      chip.textContent = `${key} ${vert.passed}/${vert.total}`;
+      chipsBox.appendChild(chip);
+    });
+    const composite = $("#composite-note");
+    if (composite) {
+      if (report.composite_0_100 == null) {
+        composite.hidden = true;
+      } else {
+        composite.hidden = false;
+        composite.textContent = `Optional composite ${report.composite_0_100}/100 — not acceptance.`;
+      }
+    }
+    const note = $("#teach-note");
+    if (note) {
+      note.textContent = report.teachability_ok
+        ? "Why on fail shown under the failing check."
+        : "Teachability gate failed — every failure needs a why.";
+    }
   }
 
   function renderDispose() {
     mount("tpl-dispose");
-    paintPack($("#dispose-pack"), state.session);
     const err = $("#dispose-error");
     $("#keep").addEventListener("click", async () => {
       try {
@@ -295,47 +325,33 @@
     });
   }
 
-  function renderDoneKeep() {
-    mount("tpl-done-keep");
-    paintPack($("#kept-pack"), state.session);
-    $("#keep-path").textContent = state.session.written_path || "";
-    $("#open-skill").addEventListener("click", () => {
-      window.open(`/api/sessions/${state.session.id}/skill`, "_blank");
-    });
-    $("#keep-done").addEventListener("click", reset);
-  }
-
-  function renderDoneThrow() {
-    mount("tpl-done-throw");
-    $("#throw-done").addEventListener("click", reset);
+  function renderDone() {
+    mount("tpl-done");
+    const kept = state.session.disposed === "keep";
+    $("#keep-outcome").dataset.on = kept ? "1" : "0";
+    $("#throw-outcome").dataset.on = kept ? "0" : "1";
+    if (kept) {
+      $("#keep-path").textContent = state.session.written_path || `${state.session.name}/SKILL.md`;
+      const tree = (state.session.pack_tree || []).join("\n");
+      $("#keep-tree").textContent = tree;
+      $("#open-skill").hidden = false;
+      $("#open-skill").addEventListener("click", () => {
+        window.open(`/api/sessions/${state.session.id}/skill`, "_blank");
+      });
+    } else {
+      $("#keep-path").textContent = "Not written.";
+      $("#keep-tree").textContent = "";
+    }
+    $("#done-again").addEventListener("click", reset);
   }
 
   function reset() {
     state.session = null;
-    state.picked = "description";
+    state.jobDraft = "";
+    state.hold = null;
     state.screen = "start";
     renderStart();
   }
 
-  async function boot() {
-    try {
-      state.methods = await api("/api/methods");
-    } catch {
-      state.methods = {
-        citation: {
-          url: "https://academy.claude.com/tutorials/the-4-ds-of-ai-fluency-behavioral-indicators",
-          label: "Cited: Anthropic Academy · Fluency 4Ds — Delegation · Description · Discernment · Diligence (cite only; no invented method prose).",
-        },
-        methods: [
-          { id: "delegation", name: "Delegation", card: "What the agent owns vs what stays with you" },
-          { id: "description", name: "Description", card: "Plain job + when / not-when trigger craft" },
-          { id: "discernment", name: "Discernment", card: "Checks, near-misses, refuse paths" },
-          { id: "diligence", name: "Diligence", card: "Verify steps · more in references/" },
-        ],
-      };
-    }
-    renderStart();
-  }
-
-  boot();
+  render();
 })();

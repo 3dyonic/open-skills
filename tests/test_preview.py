@@ -55,10 +55,28 @@ def test_ui_is_skill_authoring_playground_not_workshop() -> None:
     assert "Workshop" not in html
     assert "workshop" not in html.lower()
     assert "start-workshop" not in js
-    assert "start-author" in js
+    assert "start-continue" in js
+    assert "start-author" not in js
     assert "Run check" in html
     assert "id=\"run-check\"" in html
     assert "Prove trigger" not in html
+    assert "on_job" in html or "on_job" in js
+    assert "cites_skill_steps" in js
+
+
+def test_ui_cites_lean_frames_not_opus() -> None:
+    html = Path("app/static/index.html").read_text(encoding="utf-8")
+    readme = Path("README.md").read_text(encoding="utf-8")
+    assert "Say the job in plain words" in html
+    assert "You’ve proved the trigger. Decide." in html
+    assert "Two outcomes — same frame" in html
+    assert "Keep/Throw" in Path("app/static/app.js").read_text(encoding="utf-8")
+    assert "node-id=6-5" in readme
+    assert "node-id=6-68" in readme
+    assert "node-id=6-107" in readme
+    assert "node-id=1-2" not in readme
+    assert "node-id=4-2" not in readme
+    assert "I learned" not in html
 
 
 def test_no_old_thin_gate_figma() -> None:

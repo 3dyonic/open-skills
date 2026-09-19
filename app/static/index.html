@@ -11,178 +11,172 @@
 </head>
 <body>
   <header class="nav">
-    <span class="nav-brand">OPEN SKILLS  ·  SKILL-AUTHORING PLAYGROUND</span>
-    <span class="nav-step" id="nav-step">1 · Start</span>
+    <span class="nav-brand">OPEN SKILLS</span>
+    <span class="nav-step" id="nav-step">01 · Start</span>
   </header>
 
-  <ol class="rail" id="rail" aria-label="Skill-authoring playground flow"></ol>
+  <div class="flow-wrap">
+    <ol class="chips" id="chips" aria-label="Happy path"></ol>
+    <p class="flow-note">Spirit of open-skills-sot.md §4 — dispose is the sacred gate (Keep writes · Throw away writes nothing).</p>
+  </div>
 
   <main id="app"></main>
 
   <template id="tpl-start">
-    <section class="page">
-      <p class="eyebrow">OPEN SKILLS  ·  SKILL-AUTHORING PLAYGROUND</p>
-      <h1>A skill-authoring playground that teaches good skills — and only keeps the ones you accept.</h1>
-      <p class="lede">Simple on the surface. Nested skills, tools, and scripts underneath. LLM drafts; you steer. Keep writes the skill pack · Throw away writes nothing.</p>
-      <p class="cite-line">Cites open-skills SoT §1–4  ·  Companion example: UX/UI craft-ops (§1 expect + §3 knowledge)  ·  Inspire first — break down later</p>
-      <div class="flow-grid" id="start-flow"></div>
-      <div class="actions">
-        <button type="button" class="btn btn-primary" id="start-author">Start — make a skill that knows when to help</button>
-      </div>
-      <div class="learn-grid">
-        <article class="learn"><p class="learn-kicker">I learned…</p><p>A vague wake line fires on everything — and nothing reliable.</p></article>
-        <article class="learn"><p class="learn-kicker">I learned…</p><p>Near-miss should-nots teach more than happy-path alone.</p></article>
-        <article class="learn"><p class="learn-kicker">I learned…</p><p>Throw away is success when the skill isn’t ready to keep.</p></article>
-        <article class="learn"><p class="learn-kicker">I learned…</p><p>Depth lives in references/ and scripts/ — keep the body lean.</p></article>
+    <section class="page page-center">
+      <p class="eyebrow">OPEN SKILLS</p>
+      <h1 class="center">Open Skills · skill-authoring playground</h1>
+      <p class="lede center">LLM drafts; you steer. Keep writes · Throw away writes nothing.</p>
+      <label class="sr-only" for="job">What job should this skill help with?</label>
+      <input id="job" class="job-input" type="text" placeholder="What job should this skill help with?" autocomplete="off" />
+      <div class="actions center">
+        <button type="button" class="btn btn-primary" id="start-continue">Continue</button>
       </div>
     </section>
   </template>
 
-  <template id="tpl-job">
+  <template id="tpl-describe">
     <section class="page">
-      <p class="eyebrow">02  ·  DESCRIBE</p>
+      <p class="eyebrow">02 · DESCRIBE</p>
       <h1>Say the job in plain words</h1>
-      <p class="lede">Empty start. Name the repeatable job a host should wake for — not a persona, not a marketplace listing.</p>
-      <label class="field-label" for="job">The job</label>
-      <textarea id="job" rows="6" placeholder="A UX invent request: run our craft-ops procedure (DoR before invent, then benchmarks and dispose) — not a senior-designer persona, not marketing copy."></textarea>
-      <div class="actions end">
-        <button type="button" class="btn btn-primary" id="job-continue">Continue to Build</button>
+      <div class="surface">
+        <p class="kicker muted">JOB (PLAIN WORDS)</p>
+        <p class="surface-body" id="describe-job"></p>
+      </div>
+      <div class="preview-row">
+        <div class="wash-card">
+          <p class="kicker accent">SHORT NAME</p>
+          <p class="surface-body" id="describe-name"></p>
+        </div>
+        <div class="wash-card">
+          <p class="kicker accent">WAKE LINE</p>
+          <p class="surface-body" id="describe-wake"></p>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="describe-continue">Continue</button>
       </div>
     </section>
   </template>
 
   <template id="tpl-build">
     <section class="page">
-      <p class="eyebrow">03  ·  BUILD</p>
-      <h1>Steer method, body, nested pieces</h1>
-      <p class="lede">LLM drafted. You steer. Method fields stay on the path; nesting, tools, and scripts stay underneath until you open them.</p>
-      <a class="cite" id="academy-cite" href="https://academy.claude.com/tutorials/the-4-ds-of-ai-fluency-behavioral-indicators" target="_blank" rel="noopener">Cited: Anthropic Academy · Fluency 4Ds</a>
-      <div class="methods" id="method-cards"></div>
+      <p class="eyebrow">03 · BUILD</p>
+      <h1>Steer what's on the surface</h1>
+      <p class="lede">method → wake / not-when → body steps</p>
+      <label class="field-label" for="method">METHOD</label>
+      <select id="method" class="method-select">
+        <option value="description">Description — when / not-when trigger craft</option>
+        <option value="delegation">Delegation — what the agent owns vs you</option>
+        <option value="discernment">Discernment — checks, near-misses, refuse</option>
+        <option value="diligence">Diligence — verify steps; more in references/</option>
+      </select>
       <div class="split">
         <div>
-          <label class="field-label tight" for="when">When</label>
-          <textarea id="when" rows="3" placeholder="From a PR / changelog — the unit is release notes."></textarea>
+          <label class="field-label" for="when">WAKE</label>
+          <textarea id="when" rows="3" placeholder="Release notes from a PR / changelog."></textarea>
         </div>
         <div>
-          <label class="field-label tight" for="not-when">Not when</label>
-          <textarea id="not-when" rows="3" placeholder="Not for marketing, blog posts, or meeting summaries."></textarea>
+          <label class="field-label" for="not-when">NOT-WHEN</label>
+          <textarea id="not-when" rows="3" placeholder="Marketing prose, blog posts, meeting notes."></textarea>
         </div>
       </div>
-      <label class="field-label tight" for="body">Steps</label>
-      <textarea id="body" rows="6" placeholder="Short procedure. Depth goes in references/ or scripts/."></textarea>
+      <label class="field-label" for="body">BODY STEPS</label>
+      <textarea id="body" rows="3" placeholder="1) Read diff  2) Extract user-facing changes  3) Draft notes  4) Match style-guide tone"></textarea>
       <details class="depth" id="depth-panel">
-        <summary>Underneath — open when needed</summary>
-        <p class="note">Progressive stubs. Simple path stays a single SKILL.md pack. Opening one includes it only after Keep.</p>
+        <summary>Nested skills / tools / scripts open when needed</summary>
+        <p class="note">Progressive stubs. Simple path stays a single SKILL.md pack.</p>
         <label class="check"><input type="checkbox" id="depth-nested" /> Nested sub-skills</label>
         <label class="check"><input type="checkbox" id="depth-tools" /> Tools attachments</label>
         <label class="check"><input type="checkbox" id="depth-scripts" /> Scripts / draft.sh</label>
       </details>
-      <div class="pack-card" id="build-pack"></div>
-      <div class="actions end">
-        <button type="button" class="btn btn-primary" id="build-continue">Continue to Prove</button>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="build-continue">Continue</button>
       </div>
     </section>
   </template>
 
   <template id="tpl-prove">
     <section class="page">
-      <p class="eyebrow">04  ·  TEACHABLE BENCHMARKS</p>
-      <h1>Live prove — not pass/fail theater. Show WHY.</h1>
-      <p class="lede">One Run check. Two result kinds: <strong>Wake</strong> (should / should-not) and <strong>Output</strong> (relevant / not). Prove before Keep. The host shells out to the rank/prove CLI.</p>
-      <div class="split">
+      <div class="prove-head">
         <div>
-          <label class="field-label tight" for="when">When</label>
-          <textarea id="when" rows="3"></textarea>
+          <p class="eyebrow">04 · PROVE</p>
+          <h1>Check wake + output relevance</h1>
         </div>
-        <div>
-          <label class="field-label tight" for="not-when">Not when</label>
-          <textarea id="not-when" rows="3"></textarea>
-        </div>
-      </div>
-      <div class="prompt-edit">
-        <div>
-          <label class="field-label tight" for="should">Wake · should</label>
-          <textarea id="should" rows="4"></textarea>
-        </div>
-        <div>
-          <label class="field-label tight" for="should-not">Wake · should not</label>
-          <textarea id="should-not" rows="4"></textarea>
-        </div>
-      </div>
-      <div class="prompt-edit">
-        <div>
-          <label class="field-label tight" for="relevant">Output · relevant</label>
-          <textarea id="relevant" rows="3"></textarea>
-        </div>
-        <div>
-          <label class="field-label tight" for="not-relevant">Output · not</label>
-          <textarea id="not-relevant" rows="3"></textarea>
-        </div>
-      </div>
-      <div class="actions">
         <button type="button" class="btn btn-primary" id="run-check">Run check</button>
       </div>
-      <div class="bench" id="bench"></div>
+      <p class="lede tight">Wake recall/precision + output rubric via CLI (Pydantic). LLM fills the checklist; the CLI structures it. Composite weights are optional — not acceptance.</p>
+      <div class="prove-cols">
+        <section class="col">
+          <h2>WAKE</h2>
+          <label class="field-label" for="should">Recall · should</label>
+          <textarea id="should" rows="3"></textarea>
+          <label class="field-label" for="should-not">Precision · should not</label>
+          <textarea id="should-not" rows="3"></textarea>
+          <div class="col-results" id="wake-results"></div>
+        </section>
+        <section class="col">
+          <h2>OUTPUT</h2>
+          <label class="field-label" for="relevant">Relevant</label>
+          <textarea id="relevant" rows="3"></textarea>
+          <label class="field-label" for="not-relevant">Not relevant</label>
+          <textarea id="not-relevant" rows="3"></textarea>
+          <div class="col-results" id="output-results"></div>
+        </section>
+      </div>
+      <div class="score-strip" id="score-strip" hidden>
+        <div class="score-main">
+          <p class="kicker muted">CHECKLIST</p>
+          <p class="score-num" id="score-num">Wake + Output</p>
+        </div>
+        <div class="score-chips" id="score-chips"></div>
+      </div>
+      <p class="note" id="composite-note" hidden></p>
+      <p class="note" id="teach-note">Why on fail shown under the failing check.</p>
+      <p class="teach-line">Near-miss teaches more than happy-path alone.</p>
       <p class="error" id="prove-error" hidden></p>
-      <div class="actions end">
-        <button type="button" class="btn btn-primary" id="prove-continue" disabled>You’ve proved it — decide</button>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="prove-continue" disabled>Continue</button>
       </div>
     </section>
   </template>
 
   <template id="tpl-dispose">
-    <section class="page">
-      <p class="eyebrow">05  ·  KEEP / THROW — HERO</p>
-      <h1>The sacred gate. Not Save draft.</h1>
-      <div class="hero">
-        <p class="hero-title">You’ve proved the trigger. Decide.</p>
-        <p class="hero-lede">LLM proposed. You dispose. Keep writes the skill pack. Throw away writes nothing — junk never sticks.</p>
-        <div class="pack-card" id="dispose-pack"></div>
-        <p class="error" id="dispose-error" hidden></p>
-        <div class="actions dispose">
-          <button type="button" class="btn btn-primary" id="keep">Keep — write skill pack</button>
-          <button type="button" class="btn btn-throw" id="throw">Throw away — write nothing</button>
-        </div>
-        <p class="note">SoT §4 · Reject as ignore is a falsifier. Dispose stays the primary CTA.</p>
+    <section class="page page-center">
+      <p class="eyebrow">05 · KEEP / THROW</p>
+      <h1 class="center">You’ve proved the trigger. Decide.</h1>
+      <p class="lede center">Sacred gate — not Save draft. LLM proposed. You dispose.</p>
+      <p class="error" id="dispose-error" hidden></p>
+      <div class="actions center">
+        <button type="button" class="btn btn-primary" id="keep">Keep — write skill pack</button>
+        <button type="button" class="btn btn-throw" id="throw">Throw away — write nothing</button>
       </div>
+      <p class="flow-note center">Spirit of open-skills-sot.md §4 — dispose stays primary. Reject-as-ignore is a falsifier.</p>
     </section>
   </template>
 
-  <template id="tpl-done-keep">
+  <template id="tpl-done">
     <section class="page">
-      <p class="eyebrow">06  ·  DONE</p>
-      <div class="done-card keep">
-        <span class="badge badge-ok">Kept</span>
-        <h1>Skill pack written</h1>
-        <p class="lede">Durable agentskills.io pack — When / Not when in the wake line. Hosts already understand this shape.</p>
-        <div class="pack-card" id="kept-pack"></div>
-        <div class="path-box">
-          <p class="draft-kicker">Path</p>
-          <p class="path" id="keep-path"></p>
-        </div>
-        <div class="row">
-          <button type="button" class="btn btn-ghost" id="open-skill">Open SKILL.md</button>
-          <button type="button" class="btn btn-primary" id="keep-done">Start another</button>
-        </div>
+      <p class="eyebrow">06 · DONE</p>
+      <h1>Two outcomes — same frame</h1>
+      <div class="done-cols">
+        <article class="outcome" id="keep-outcome">
+          <p class="kicker accent">KEEP PATH</p>
+          <h2>Skill pack on disk</h2>
+          <p class="path" id="keep-path">Not written.</p>
+          <pre id="keep-tree"></pre>
+        </article>
+        <article class="outcome" id="throw-outcome">
+          <p class="kicker accent">THROW PATH</p>
+          <h2>Nothing on disk.</h2>
+          <p>Draft discarded.</p>
+          <p>Junk never sticks.</p>
+          <p class="note">Throw away is success when the skill isn’t ready to keep.</p>
+        </article>
       </div>
-    </section>
-  </template>
-
-  <template id="tpl-done-throw">
-    <section class="page">
-      <p class="eyebrow">06  ·  DONE</p>
-      <div class="done-card throw">
-        <span class="badge badge-no">Thrown away</span>
-        <h1>Nothing written</h1>
-        <p class="lede">Throw away is success when the skill isn’t ready to keep. Zero durable skill files. Disk unchanged.</p>
-        <div class="path-box">
-          <p class="draft-kicker">Confirmed</p>
-          <p class="path">No SKILL.md. No pack. Draft discarded.</p>
-        </div>
-        <div class="learn"><p class="learn-kicker">I learned…</p><p>Throw away is success when the skill isn’t ready to keep.</p></div>
-        <div class="row">
-          <button type="button" class="btn btn-primary" id="throw-done">Start another</button>
-        </div>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" id="open-skill" hidden>Open SKILL.md</button>
+        <button type="button" class="btn btn-primary" id="done-again">Start another</button>
       </div>
     </section>
   </template>

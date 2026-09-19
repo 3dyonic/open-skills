@@ -71,6 +71,7 @@ class Session:
     relevant: list[str] = field(default_factory=list)
     not_relevant: list[str] = field(default_factory=list)
     benchmarks: list[dict[str, Any]] = field(default_factory=list)
+    prove_report: dict[str, Any] | None = None
     proved: bool = False
     depth: Depth = field(default_factory=Depth)
     sections: dict[str, Section] = field(default_factory=dict)
@@ -132,6 +133,7 @@ class Session:
             "relevant": list(self.relevant),
             "not_relevant": list(self.not_relevant),
             "benchmarks": list(self.benchmarks),
+            "prove_report": self.prove_report,
             "proved": self.proved,
             "depth": self.depth.as_dict(),
             "sections": {k: v.as_dict() for k, v in self.sections.items()},
@@ -210,6 +212,7 @@ class Store:
             )
         session.proved = False
         session.benchmarks = []
+        session.prove_report = None
         session.step = "build"
         if continue_to_prove:
             self._require_trigger(session)
@@ -273,7 +276,7 @@ class Store:
         if not session.not_relevant:
             session.not_relevant = ["A 1200-word blog post about our product launch."]
         try:
-            session.benchmarks = run_prove(
+            report = run_prove(
                 job=session.job,
                 when=session.when,
                 not_when=session.not_when,
@@ -281,9 +284,12 @@ class Store:
                 should_not=session.should_not,
                 relevant=session.relevant,
                 not_relevant=session.not_relevant,
+                body=session.body,
             )
         except ProveCLIError as exc:
             raise GateError("cli_failed", str(exc)) from exc
+        session.prove_report = report.model_dump()
+        session.benchmarks = [row.model_dump() for row in report.cases]
         session.proved = True
         session.step = "dispose" if continue_to_dispose else "prove"
         return session

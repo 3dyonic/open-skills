@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from app.scheme import ProveRequest, ProveResponse, RankRequest, RankResponse
+from app.scheme import ProveReport, ProveRequest, RankRequest
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -56,18 +56,22 @@ def run_prove(
     should_not: list[str],
     relevant: list[str] | None = None,
     not_relevant: list[str] | None = None,
-) -> list[dict[str, Any]]:
+    body: str = "",
+    weights: dict[str, int] | None = None,
+) -> ProveReport:
     req = ProveRequest(
         job=job,
         when=when,
         not_when=not_when,
+        body=body,
         should=should,
         should_not=should_not,
         relevant=relevant or [],
         not_relevant=not_relevant or [],
+        weights=weights,
     )
     data = _run("prove", req.model_dump())
-    return [row.model_dump() for row in ProveResponse.model_validate(data).cases]
+    return ProveReport.model_validate(data)
 
 
 def run_rank(
@@ -77,13 +81,18 @@ def run_rank(
     when: str,
     not_when: str,
     prompts: list[str],
+    body: str = "",
+    weights: dict[str, int] | None = None,
 ) -> list[dict[str, Any]]:
     req = RankRequest(
         family=family,  # type: ignore[arg-type]
         job=job,
         when=when,
         not_when=not_when,
+        body=body,
         prompts=prompts,
+        weights=weights,
     )
     data = _run("rank", req.model_dump())
-    return [row.model_dump() for row in RankResponse.model_validate(data).ranked]
+    report = ProveReport.model_validate(data)
+    return [row.model_dump() for row in report.ranked]
