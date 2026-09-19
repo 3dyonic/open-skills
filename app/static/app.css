@@ -54,17 +54,32 @@ html, body {
   padding: 8px 48px 0;
 }
 
+.flow-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.flow-kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
 .chips {
   list-style: none;
   margin: 0;
-  padding: 16px 24px;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: 12px;
 }
 
 .chips li {
@@ -116,7 +131,13 @@ main { width: 100%; }
 .page-center {
   align-items: center;
   text-align: center;
+  justify-content: center;
+  min-height: calc(100vh - 180px);
   padding-top: 72px;
+}
+
+.page-prove {
+  max-width: 1040px;
 }
 
 .eyebrow {
@@ -276,8 +297,25 @@ textarea { resize: vertical; }
   gap: 16px;
 }
 
-.col { background: var(--paper); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.col { background: var(--paper); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .col h2 { margin: 0; font-size: 14px; font-weight: 600; }
+
+.fixture-edit {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.fixture-edit summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.fixture-edit[open] summary { margin-bottom: 10px; }
+.fixture-edit textarea { margin-bottom: 8px; padding: 10px 12px; font-size: 13px; }
 
 .col-results { display: flex; flex-direction: column; gap: 12px; }
 

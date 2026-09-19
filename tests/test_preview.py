@@ -59,10 +59,12 @@ def test_ui_is_skill_authoring_playground_not_workshop() -> None:
     assert "start-author" not in js
     assert "Run check" in html
     assert "id=\"run-check\"" in html
+    assert "Check wake + output relevance" in html
     assert "Prove trigger" not in html
     assert "with-skill" in html
     assert "near-miss" in html
-    assert "evidence" in js
+    assert "Craft Ready lean" in html
+    assert "Near-miss teaches more than happy-path alone." in html
 
 
 def test_ui_cites_lean_frames_not_opus() -> None:

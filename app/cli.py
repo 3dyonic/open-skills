@@ -119,7 +119,7 @@ def score_wake(prompt: str, kind: str, req: ProveRequest) -> WakeCase:
     honest = len(set(woke_flags)) == 1
     against = req.when if expected else req.not_when
     if expected and woke:
-        badge, verdict = "SHOULD", "Matched · woke"
+        badge, verdict = "SHOULD WAKE", "Matched · woke"
         why = _why(f"wake line names the job ({_preview(req.job)}) + when ({_preview(req.when)}).")
     elif (not expected) and (not woke):
         badge = "SHOULD NOT" if kind == "should_not" else "NEAR-MISS"
@@ -190,9 +190,9 @@ def score_output(sample: str, kind: str, req: ProveRequest) -> OutputCase:
         why="" if passed else why,
     )
     if kind == "with" and passed:
-        badge, verdict = "WITH", "With skill · on-job"
+        badge, verdict = "RELEVANT", "Relevant · on-job"
     elif kind == "without" and passed:
-        badge, verdict = "WITHOUT", "Without skill · control"
+        badge, verdict = "NOT RELEVANT", "Not relevant · off-job"
     else:
         badge, verdict = "MISMATCH", "Judge fail · see evidence"
     return OutputCase(

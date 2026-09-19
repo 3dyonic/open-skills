@@ -196,6 +196,12 @@
     $("#with-skill").value = (state.session.with_skill || state.session.relevant || []).join("\n");
     $("#without-skill").value = (state.session.without_skill || state.session.not_relevant || []).join("\n");
     paintProve();
+    if (!state.session.proved) {
+      const wakeEdit = $("#wake-edit");
+      const outEdit = $("#output-edit");
+      if (wakeEdit) wakeEdit.open = true;
+      if (outEdit) outEdit.open = true;
+    }
     $("#prove-continue").disabled = !state.session.proved;
     $("#run-check").addEventListener("click", () => runProve(false));
     $("#prove-continue").addEventListener("click", () => runProve(true));
@@ -246,14 +252,11 @@
     card.querySelector(".prompt").textContent = `“${fixture}”`;
     card.querySelector(".verdict").textContent = row.verdict || "";
     const bits = [];
-    if (row.trigger_rate != null) bits.push(`trigger_rate ${row.trigger_rate} (${row.woke_count || 0}/${row.runs || 1})`);
-    if (row.judge) bits.push(`judge ${row.judge}`);
-    if (ev.hits && ev.hits.length) bits.push(`hits ${ev.hits.slice(0, 6).join(", ")}`);
-    if (ev.against) bits.push(`against ${ev.against}`);
-    if (ev.source) bits.push(ev.source);
+    if (ev.hits && ev.hits.length) bits.push(ev.hits.slice(0, 6).join(", "));
+    if (row.trigger_rate != null) bits.push(`rate ${row.trigger_rate}`);
+    if (row.judge) bits.push(row.judge);
     card.querySelector(".evidence").textContent = bits.join(" · ");
-    const ok = row.matched != null ? row.matched : row.passed;
-    card.querySelector(".why").textContent = ok ? "" : row.why || "";
+    card.querySelector(".why").textContent = row.why || "";
     return card;
   }
 

@@ -16,8 +16,11 @@
   </header>
 
   <div class="flow-wrap">
-    <ol class="chips" id="chips" aria-label="Happy path"></ol>
-    <p class="flow-note">Spirit of open-skills-sot.md §4 — dispose is the sacred gate (Keep writes · Throw away writes nothing).</p>
+    <div class="flow-card">
+      <p class="flow-kicker">Craft Ready lean · happy path only · 2026-09-19 · Eng cites these frames</p>
+      <ol class="chips" id="chips" aria-label="Happy path"></ol>
+      <p class="flow-note">Spirit of open-skills-sot.md §4 — dispose is the sacred gate (Keep writes · Throw away writes nothing).</p>
+    </div>
   </div>
 
   <main id="app"></main>
@@ -97,36 +100,43 @@
   </template>
 
   <template id="tpl-prove">
-    <section class="page">
+    <section class="page page-prove">
       <div class="prove-head">
         <div>
           <p class="eyebrow">04 · PROVE</p>
-          <h1>Wake + Output evidence reports</h1>
+          <h1>Check wake + output relevance</h1>
         </div>
         <button type="button" class="btn btn-primary" id="run-check">Run check</button>
       </div>
-      <p class="lede tight">Separate Wake and Output reports with evidence on every case. Human Keep / Throw — no numeric floor.</p>
+      <p class="lede tight">Scores wake + output relevance via CLI (scheme + Pydantic). External LLM may judge relevance text — not a fat in-app eval suite.</p>
       <div class="prove-cols">
         <section class="col">
           <h2>WAKE</h2>
-          <label class="field-label" for="should">Should</label>
-          <textarea id="should" rows="3"></textarea>
-          <label class="field-label" for="should-not">Should not</label>
-          <textarea id="should-not" rows="3"></textarea>
-          <label class="field-label" for="near-miss">Near-miss</label>
-          <textarea id="near-miss" rows="2"></textarea>
+          <details class="fixture-edit" id="wake-edit">
+            <summary>Edit fixtures</summary>
+            <label class="field-label" for="should">Should</label>
+            <textarea id="should" rows="2"></textarea>
+            <label class="field-label" for="should-not">Should not</label>
+            <textarea id="should-not" rows="2"></textarea>
+            <label class="field-label" for="near-miss">Near-miss</label>
+            <textarea id="near-miss" rows="2"></textarea>
+          </details>
           <div class="col-results" id="wake-results"></div>
         </section>
         <section class="col">
           <h2>OUTPUT</h2>
-          <label class="field-label" for="with-skill">With skill</label>
-          <textarea id="with-skill" rows="3"></textarea>
-          <label class="field-label" for="without-skill">Without skill</label>
-          <textarea id="without-skill" rows="3"></textarea>
+          <details class="fixture-edit" id="output-edit">
+            <summary>Edit fixtures</summary>
+            <label class="field-label" for="with-skill">With skill</label>
+            <textarea id="with-skill" rows="2"></textarea>
+            <label class="field-label" for="without-skill">Without skill</label>
+            <textarea id="without-skill" rows="2"></textarea>
+          </details>
           <div class="col-results" id="output-results"></div>
         </section>
       </div>
-      <p class="note" id="prove-meta">Evidence-tied reports. P/R and trigger rates are observations, not a Keep floor.</p>
+      <p class="teach-line">Near-miss teaches more than happy-path alone.</p>
+      <p class="note" id="prove-meta">Human Keep / Throw after the reports — no numeric floor.</p>
       <p class="error" id="prove-error" hidden></p>
       <div class="actions">
         <button type="button" class="btn btn-primary" id="prove-continue" disabled>Continue</button>

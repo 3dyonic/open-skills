@@ -4,7 +4,7 @@ Day-1: **job → build → prove (Wake + Output evidence reports) → Keep write
 
 Tracker: [OSK-16](https://juice-engine.atlassian.net/browse/OSK-16) · [OSK-22](https://juice-engine.atlassian.net/browse/OSK-22) (no numeric keep/kill floors) · [OSK-23](https://juice-engine.atlassian.net/browse/OSK-23) (prove shape).
 
-Craft SoT — lean page [6:3](https://www.figma.com/design/Xa60SjtMsUZDYcIQyCKr1j/Open-Skills-%C2%B7-workshop-vision?node-id=6-3) frames only:
+Craft SoT — lean page [6:3](https://www.figma.com/design/Xa60SjtMsUZDYcIQyCKr1j/Open-Skills-%C2%B7-workshop-vision?node-id=6-3). UI cites attached Craft Ready PNGs for **6:5 / 6:68 / 6:107** (not opus 1:2 / 4:2):
 
 - [6:5](https://www.figma.com/design/Xa60SjtMsUZDYcIQyCKr1j/Open-Skills-%C2%B7-workshop-vision?node-id=6-5) Flow map
 - [6:26](https://www.figma.com/design/Xa60SjtMsUZDYcIQyCKr1j/Open-Skills-%C2%B7-workshop-vision?node-id=6-26) Start
