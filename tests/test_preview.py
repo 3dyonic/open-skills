@@ -46,6 +46,16 @@ def test_ui_uses_keep_throw_away_not_accept_reject() -> None:
     assert "/throw" in js
 
 
+def test_index_disables_cache_so_png_sot_is_served(client) -> None:
+    res = client.get("/")
+    assert res.status_code == 200
+    assert "no-store" in res.headers.get("cache-control", "")
+    assert "Check wake + output relevance" in res.text
+    assert "Craft Ready lean" in res.text
+    assert "app.css?v=" in res.text
+    assert "app.js?v=" in res.text
+
+
 def test_ui_is_skill_authoring_playground_not_workshop() -> None:
     html = Path("app/static/index.html").read_text(encoding="utf-8")
     js = Path("app/static/app.js").read_text(encoding="utf-8")

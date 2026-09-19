@@ -46,7 +46,14 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Open Skills — skill-authoring playground", lifespan=lifespan)
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+class NoCacheStatic(StaticFiles):
+    async def get_response(self, path: str, scope):  # type: ignore[override]
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-store, max-age=0"
+        return response
+
+
+app.mount("/static", NoCacheStatic(directory=STATIC_DIR), name="static")
 
 
 def _http(exc: GateError) -> HTTPException:
@@ -101,7 +108,10 @@ def health() -> dict[str, str]:
 
 @app.get("/")
 def index() -> FileResponse:
-    return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(
+        STATIC_DIR / "index.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
 
 
 @app.get("/api/methods")
