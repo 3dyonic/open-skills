@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Open Skills — skill-authoring playground</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css?v=7ed96f6" />
+</head>
+<body>
+  <header class="nav">
+    <span class="nav-brand">OPEN SKILLS</span>
+    <span class="nav-step" id="nav-step">01 · Start</span>
+  </header>
+
+  <div class="flow-wrap">
+    <div class="flow-card">
+      <p class="flow-kicker">Craft Ready lean · happy path only · 2026-09-19 · Eng cites these frames</p>
+      <ol class="chips" id="chips" aria-label="Happy path"></ol>
+      <p class="flow-note">Spirit of open-skills-sot.md §4 — dispose is the sacred gate (Keep writes · Throw away writes nothing).</p>
+    </div>
+  </div>
+
+  <main id="app"></main>
+
+  <template id="tpl-start">
+    <section class="page page-center">
+      <p class="eyebrow">OPEN SKILLS</p>
+      <h1 class="center">Open Skills · skill-authoring playground</h1>
+      <p class="lede center">LLM drafts; you steer. Keep writes · Throw away writes nothing.</p>
+      <label class="sr-only" for="job">What job should this skill help with?</label>
+      <input id="job" class="job-input" type="text" placeholder="What job should this skill help with?" autocomplete="off" />
+      <div class="actions center">
+        <button type="button" class="btn btn-primary" id="start-continue">Continue</button>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-describe">
+    <section class="page">
+      <p class="eyebrow">02 · DESCRIBE</p>
+      <h1>Say the job in plain words</h1>
+      <div class="surface">
+        <p class="kicker muted">JOB (PLAIN WORDS)</p>
+        <p class="surface-body" id="describe-job"></p>
+      </div>
+      <div class="preview-row">
+        <div class="wash-card">
+          <p class="kicker accent">SHORT NAME</p>
+          <p class="surface-body" id="describe-name"></p>
+        </div>
+        <div class="wash-card">
+          <p class="kicker accent">WAKE LINE</p>
+          <p class="surface-body" id="describe-wake"></p>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="describe-continue">Continue</button>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-build">
+    <section class="page">
+      <p class="eyebrow">03 · BUILD</p>
+      <h1>Steer what's on the surface</h1>
+      <p class="lede">method → wake / not-when → body steps</p>
+      <label class="field-label" for="method">METHOD</label>
+      <select id="method" class="method-select">
+        <option value="description">Description — when / not-when trigger craft</option>
+        <option value="delegation">Delegation — what the agent owns vs you</option>
+        <option value="discernment">Discernment — checks, near-misses, refuse</option>
+        <option value="diligence">Diligence — verify steps; more in references/</option>
+      </select>
+      <div class="split">
+        <div>
+          <label class="field-label" for="when">WAKE</label>
+          <textarea id="when" rows="3" placeholder="Release notes from a PR / changelog."></textarea>
+        </div>
+        <div>
+          <label class="field-label" for="not-when">NOT-WHEN</label>
+          <textarea id="not-when" rows="3" placeholder="Marketing prose, blog posts, meeting notes."></textarea>
+        </div>
+      </div>
+      <label class="field-label" for="body">BODY STEPS</label>
+      <textarea id="body" rows="3" placeholder="1) Read diff  2) Extract user-facing changes  3) Draft notes  4) Match style-guide tone"></textarea>
+      <details class="depth" id="depth-panel">
+        <summary>Nested skills / tools / scripts open when needed</summary>
+        <p class="note">Progressive stubs. Simple path stays a single SKILL.md pack.</p>
+        <label class="check"><input type="checkbox" id="depth-nested" /> Nested sub-skills</label>
+        <label class="check"><input type="checkbox" id="depth-tools" /> Tools attachments</label>
+        <label class="check"><input type="checkbox" id="depth-scripts" /> Scripts / draft.sh</label>
+      </details>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="build-continue">Continue</button>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-prove">
+    <section class="page page-prove">
+      <div class="prove-head">
+        <div>
+          <p class="eyebrow">04 · PROVE</p>
+          <h1>Check wake + output relevance</h1>
+        </div>
+        <button type="button" class="btn btn-primary" id="run-check">Run check</button>
+      </div>
+      <p class="lede tight">Scores wake + output relevance via CLI (scheme + Pydantic). External LLM may judge relevance text — not a fat in-app eval suite.</p>
+      <div class="prove-cols">
+        <section class="col">
+          <h2>WAKE</h2>
+          <details class="fixture-edit" id="wake-edit">
+            <summary>Edit fixtures</summary>
+            <label class="field-label" for="should">Should</label>
+            <textarea id="should" rows="2"></textarea>
+            <label class="field-label" for="should-not">Should not</label>
+            <textarea id="should-not" rows="2"></textarea>
+            <label class="field-label" for="near-miss">Near-miss</label>
+            <textarea id="near-miss" rows="2"></textarea>
+          </details>
+          <div class="col-results" id="wake-results"></div>
+        </section>
+        <section class="col">
+          <h2>OUTPUT</h2>
+          <details class="fixture-edit" id="output-edit">
+            <summary>Edit fixtures</summary>
+            <label class="field-label" for="with-skill">With skill</label>
+            <textarea id="with-skill" rows="2"></textarea>
+            <label class="field-label" for="without-skill">Without skill</label>
+            <textarea id="without-skill" rows="2"></textarea>
+          </details>
+          <div class="col-results" id="output-results"></div>
+        </section>
+      </div>
+      <p class="teach-line">Near-miss teaches more than happy-path alone.</p>
+      <p class="error" id="prove-error" hidden></p>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="prove-continue" hidden>Continue</button>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-dispose">
+    <section class="page page-center">
+      <p class="eyebrow">05 · KEEP / THROW</p>
+      <h1 class="center">You’ve proved the trigger. Decide.</h1>
+      <p class="lede center">Sacred gate — not Save draft. LLM proposed. You dispose.</p>
+      <p class="error" id="dispose-error" hidden></p>
+      <div class="actions center">
+        <button type="button" class="btn btn-primary" id="keep">Keep — write skill pack</button>
+        <button type="button" class="btn btn-throw" id="throw">Throw away — write nothing</button>
+      </div>
+      <p class="flow-note center">Spirit of open-skills-sot.md §4 — dispose stays primary. Reject-as-ignore is a falsifier.</p>
+    </section>
+  </template>
+
+  <template id="tpl-done">
+    <section class="page">
+      <p class="eyebrow">06 · DONE</p>
+      <h1>Two outcomes — same frame</h1>
+      <div class="done-cols">
+        <article class="outcome" id="keep-outcome">
+          <p class="kicker accent">KEEP PATH</p>
+          <h2>Skill pack on disk</h2>
+          <p class="path" id="keep-path">Not written.</p>
+          <pre id="keep-tree"></pre>
+        </article>
+        <article class="outcome" id="throw-outcome">
+          <p class="kicker accent">THROW PATH</p>
+          <h2>Nothing on disk.</h2>
+          <p>Draft discarded.</p>
+          <p>Junk never sticks.</p>
+          <p class="note">Throw away is success when the skill isn’t ready to keep.</p>
+        </article>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" id="open-skill" hidden>Open SKILL.md</button>
+        <button type="button" class="btn btn-primary" id="done-again">Start another</button>
+      </div>
+    </section>
+  </template>
+
+  <script src="/static/app.js?v=7ed96f6"></script>
+</body>
+</html>
