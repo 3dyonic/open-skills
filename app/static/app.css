@@ -55,13 +55,13 @@ html, body {
 }
 
 .flow-card {
-  background: var(--paper);
+  background: var(--white);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 24px 32px;
+  border-radius: 16px;
+  padding: 20px 28px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .flow-kicker {
@@ -78,31 +78,29 @@ html, body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  background: var(--white);
+  gap: 10px;
 }
 
 .chips li {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .chips button {
   background: var(--white);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 10px 16px;
+  border-radius: 999px;
+  padding: 8px 18px;
   font: inherit;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--ink);
   cursor: default;
 }
 
 .chips button[data-on="1"] {
   border-color: var(--accent);
-  background: var(--accent-wash);
   color: var(--accent);
 }
 
@@ -112,8 +110,9 @@ html, body {
 }
 
 .flow-note {
-  margin: 10px 0 0;
-  font-size: 11px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
   color: var(--muted);
 }
 
@@ -273,7 +272,7 @@ textarea { resize: vertical; }
   font: inherit;
   font-size: 16px;
   font-weight: 600;
-  border-radius: 10px;
+  border-radius: 999px;
   padding: 14px 28px;
   cursor: pointer;
   border: 2px solid transparent;
@@ -284,7 +283,7 @@ textarea { resize: vertical; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-ghost { color: var(--muted); font-size: 14px; padding: 10px 16px; border-color: var(--line); }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-throw { background: var(--paper); border-color: var(--accent); color: var(--accent); }
+.btn-throw { background: var(--white); border-color: var(--accent); color: var(--accent); }
 
 .depth { padding: 14px 18px; background: var(--accent-wash); border: 0; }
 .depth summary { cursor: pointer; font-weight: 500; color: var(--ink); font-size: 14px; }
@@ -297,8 +296,16 @@ textarea { resize: vertical; }
   gap: 16px;
 }
 
-.col { background: var(--paper); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-.col h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.col {
+  background: var(--white);
+  border: 0;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.col h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.6px; }
 
 .fixture-edit {
   background: var(--white);
@@ -322,8 +329,8 @@ textarea { resize: vertical; }
 .case-card {
   background: var(--white);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -332,16 +339,14 @@ textarea { resize: vertical; }
 .badge {
   display: inline-flex;
   width: fit-content;
-  border-radius: 6px;
-  padding: 4px 8px;
   font-size: 11px;
   font-weight: 600;
-  background: var(--accent-wash);
+  letter-spacing: 0.6px;
   color: var(--accent);
 }
 
-.case-card .prompt { margin: 0; font-size: 14px; font-weight: 500; }
-.case-card .verdict { margin: 0; font-size: 12px; font-weight: 600; }
+.case-card .prompt { margin: 0; font-size: 15px; font-weight: 500; }
+.case-card .verdict { margin: 0; font-size: 13px; font-weight: 600; }
 .rubric {
   list-style: none;
   margin: 0;
@@ -391,7 +396,7 @@ textarea { resize: vertical; }
   font-weight: 500;
 }
 
-.teach-line { margin: 0; font-size: 14px; font-weight: 500; }
+.teach-line { margin: 8px 0 0; font-size: 14px; font-weight: 500; color: var(--ink); }
 
 .error { margin: 0; color: var(--danger); font-size: 13px; }
 

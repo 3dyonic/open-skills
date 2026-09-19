@@ -124,7 +124,9 @@ def score_wake(prompt: str, kind: str, req: ProveRequest) -> WakeCase:
     elif (not expected) and (not woke):
         badge = "SHOULD NOT" if kind == "should_not" else "NEAR-MISS"
         verdict = "Did not wake · good"
-        why = _why(f"not-when excludes this near-miss ({_preview(req.not_when)}).")
+        why = _why(
+            f"not-when excludes marketing prose; this prompt is outside When ({_preview(req.not_when)})."
+        )
     elif expected:
         badge, verdict = "MISMATCH", "Did not wake · missed"
         why = _why("the prompt did not match When — wake line may be too narrow, or this should-case is off-job.")
@@ -168,9 +170,9 @@ def score_output(sample: str, kind: str, req: ProveRequest) -> OutputCase:
         judge = "deterministic"
         source = "deterministic"
         if kind == "with" and passed:
-            why = _why(f"output stays on the job ({_preview(req.job)}).")
+            why = _why(f"output matches the job; no marketing fluff ({_preview(req.job)}).")
         elif kind == "without" and passed:
-            why = _why(f"control output is outside When ({_preview(req.not_when)}).")
+            why = _why("skill should stay quiet or refuse; this output is off-job.")
         elif kind == "with":
             why = _why("with-skill sample does not look on-job.")
         else:

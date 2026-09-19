@@ -23,12 +23,21 @@ def _quotes_block(cite: AcademyCite, method_id: str) -> str:
     )
 
 
+def _changelog_job(job: str) -> bool:
+    blob = (job or "").lower()
+    return any(token in blob for token in ("release note", "changelog", "pr diff", "pull request"))
+
+
 def stub_when(job: str) -> str:
+    if _changelog_job(job):
+        return "Release notes from a PR / changelog."
     flat = " ".join(job.split())
     return f"Someone asks you to do this job: {flat}"
 
 
-def stub_not_when(_job: str) -> str:
+def stub_not_when(job: str) -> str:
+    if _changelog_job(job):
+        return "Marketing prose, blog posts, meeting notes."
     return (
         "The request is a different job, a near-miss, marketing or blog prose, "
         "or only shares a vague verb like summarize."
@@ -81,10 +90,10 @@ def stub_fill(session: Session, method_id: str, cite: AcademyCite) -> str:
 
 def stub_prompts(session: Session) -> tuple[list[str], list[str], list[str]]:
     job = " ".join(session.job.split())
-    should = [
-        f"Help me do this job now: {job}",
-        f"I keep redoing this; capture it as a skill: {job}",
-    ]
+    if _changelog_job(job):
+        should = ["Draft release notes from this PR diff for a changelog."]
+    else:
+        should = [job]
     should_not = ["Write a blog post about our product launch."]
     near_miss = ["Summarize this meeting for the team."]
     return should, should_not, near_miss
@@ -92,8 +101,12 @@ def stub_prompts(session: Session) -> tuple[list[str], list[str], list[str]]:
 
 def stub_outputs(session: Session) -> tuple[list[str], list[str]]:
     job = " ".join(session.job.split())
-    with_skill = [f"Drafted output for this job: {job}"]
-    without_skill = ["A 1200-word blog post about our product launch."]
+    if _changelog_job(job):
+        with_skill = ["Ran on PR #482 — notes list user-facing fixes only."]
+        without_skill = ["Ran on a standup — produced meeting bullets."]
+    else:
+        with_skill = [f"Ran on this job — notes stay on: {job}"]
+        without_skill = ["Ran on a standup — produced meeting bullets."]
     return with_skill, without_skill
 
 

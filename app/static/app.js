@@ -196,13 +196,8 @@
     $("#with-skill").value = (state.session.with_skill || state.session.relevant || []).join("\n");
     $("#without-skill").value = (state.session.without_skill || state.session.not_relevant || []).join("\n");
     paintProve();
-    if (!state.session.proved) {
-      const wakeEdit = $("#wake-edit");
-      const outEdit = $("#output-edit");
-      if (wakeEdit) wakeEdit.open = true;
-      if (outEdit) outEdit.open = true;
-    }
-    $("#prove-continue").disabled = !state.session.proved;
+    const cont = $("#prove-continue");
+    if (cont) cont.hidden = !state.session.proved;
     $("#run-check").addEventListener("click", () => runProve(false));
     $("#prove-continue").addEventListener("click", () => runProve(true));
   }
@@ -226,7 +221,8 @@
       });
       if (continueToDispose) return render();
       paintProve();
-      $("#prove-continue").disabled = !state.session.proved;
+      const cont = $("#prove-continue");
+      if (cont) cont.hidden = !state.session.proved;
     } catch (e) {
       if (err) {
         err.hidden = false;
@@ -246,16 +242,10 @@
       <span class="badge"></span>
       <p class="prompt"></p>
       <p class="verdict"></p>
-      <p class="evidence"></p>
       <p class="why"></p>`;
     card.querySelector(".badge").textContent = row.badge || row.kind || "";
     card.querySelector(".prompt").textContent = `“${fixture}”`;
     card.querySelector(".verdict").textContent = row.verdict || "";
-    const bits = [];
-    if (ev.hits && ev.hits.length) bits.push(ev.hits.slice(0, 6).join(", "));
-    if (row.trigger_rate != null) bits.push(`rate ${row.trigger_rate}`);
-    if (row.judge) bits.push(row.judge);
-    card.querySelector(".evidence").textContent = bits.join(" · ");
     card.querySelector(".why").textContent = row.why || "";
     return card;
   }
@@ -271,13 +261,6 @@
     const outCases = report.output?.cases || (state.session.benchmarks || []).filter((r) => r.family === "output");
     wakeCases.forEach((row) => wakeBox.appendChild(paintCard(row)));
     outCases.forEach((row) => outBox.appendChild(paintCard(row)));
-    const meta = $("#prove-meta");
-    if (meta && report.wake) {
-      const r = report.wake.recall;
-      const p = report.wake.precision;
-      const honest = report.wake.harness_honesty ? "honest" : "inconsistent";
-      meta.textContent = `Wake P/R (observation only): recall ${r ?? "—"} · precision ${p ?? "—"} · harness ${honest}. Human Keep / Throw — no numeric floor.`;
-    }
   }
 
   function renderDispose() {

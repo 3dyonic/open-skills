@@ -65,6 +65,9 @@ def test_ui_is_skill_authoring_playground_not_workshop() -> None:
     assert "near-miss" in html
     assert "Craft Ready lean" in html
     assert "Near-miss teaches more than happy-path alone." in html
+    assert "id=\"prove-continue\" hidden" in html
+    assert "Human Keep / Throw after the reports" not in html
+    assert "border-radius: 999px" in Path("app/static/app.css").read_text(encoding="utf-8")
 
 
 def test_ui_cites_lean_frames_not_opus() -> None:
