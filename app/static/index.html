@@ -3,131 +3,175 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Open Skills</title>
+  <title>Open Skills · Workshop</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/app.css" />
 </head>
 <body>
   <header class="nav">
-    <span class="nav-brand">Open Skills</span>
-    <span class="nav-step" id="nav-step">Step 1 · Intent</span>
+    <span class="nav-brand">OPEN SKILLS  ·  WORKSHOP</span>
+    <span class="nav-step" id="nav-step">1 · Start</span>
   </header>
+
+  <ol class="rail" id="rail" aria-label="Workshop flow"></ol>
 
   <main id="app"></main>
 
-  <template id="tpl-intent">
+  <template id="tpl-start">
     <section class="page">
-      <h1>I keep pasting this procedure…</h1>
-      <p class="lede">Describe the messy job in plain language. No gallery, no pack browse — just what you keep redoing.</p>
-      <label class="field-label" for="intent">What should this skill do?</label>
-      <textarea id="intent" rows="5" placeholder="Every time a teammate asks how we ship a hotfix, I paste the same checklist from Slack: confirm severity, open the runbook, ping on-call, verify rollback… I want a skill that captures that procedure so I stop pasting."></textarea>
-      <div class="actions end">
-        <button type="button" class="btn btn-primary" id="intent-continue">Continue</button>
+      <p class="eyebrow">OPEN SKILLS  ·  WORKSHOP VISION  ·  OSK-17</p>
+      <h1>A workshop that teaches good skills — and only keeps the ones you accept.</h1>
+      <p class="lede">Simple on the surface. Nested skills, tools, and scripts underneath. LLM drafts; you steer. Keep writes the skill pack · Throw away writes nothing.</p>
+      <p class="cite-line">Cites open-skills SoT §1–4  ·  Academy Fluency 4Ds  ·  Inspire first — break down later</p>
+      <div class="flow-grid" id="start-flow"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="start-workshop">Start — make a skill that knows when to help</button>
+      </div>
+      <div class="learn-grid">
+        <article class="learn"><p class="learn-kicker">I learned…</p><p>A vague wake line fires on everything — and nothing reliable.</p></article>
+        <article class="learn"><p class="learn-kicker">I learned…</p><p>Near-miss should-nots teach more than happy-path alone.</p></article>
+        <article class="learn"><p class="learn-kicker">I learned…</p><p>Throw away is success when the skill isn’t ready to keep.</p></article>
+        <article class="learn"><p class="learn-kicker">I learned…</p><p>Depth lives in references/ and scripts/ — keep the body lean.</p></article>
       </div>
     </section>
   </template>
 
-  <template id="tpl-methods">
+  <template id="tpl-job">
     <section class="page">
-      <h1>Pick a method spine</h1>
-      <p class="lede">Map Academy Fluency 4Ds into SKILL.md jobs. Choose one to draft first — required before prove-trigger.</p>
-      <a class="cite" id="academy-cite" href="https://academy.claude.com/tutorials/the-4-ds-of-ai-fluency-behavioral-indicators" target="_blank" rel="noopener">Cited: Anthropic Academy · Fluency 4Ds — Delegation · Description · Discernment · Diligence (cite only; no invented method prose).</a>
-      <div class="methods" id="method-cards"></div>
-      <p class="note">Must pick one. Skip / waive only with an explicit waive later — not day-1 hero.</p>
+      <p class="eyebrow">02  ·  DESCRIBE</p>
+      <h1>Say the job in plain words</h1>
+      <p class="lede">Empty start. Name the repeatable job a host should wake for — not a persona, not a marketplace listing.</p>
+      <label class="field-label" for="job">The job</label>
+      <textarea id="job" rows="6" placeholder="Draft release notes from a PR diff for the changelog — our voice, not a blog post or a meeting summary."></textarea>
       <div class="actions end">
-        <button type="button" class="btn btn-primary" id="methods-continue">Continue to prove trigger</button>
+        <button type="button" class="btn btn-primary" id="job-continue">Continue to Build</button>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-build">
+    <section class="page">
+      <p class="eyebrow">03  ·  BUILD</p>
+      <h1>Steer method, body, nested pieces</h1>
+      <p class="lede">LLM drafted. You steer. Method fields stay on the path; nesting, tools, and scripts stay underneath until you open them.</p>
+      <a class="cite" id="academy-cite" href="https://academy.claude.com/tutorials/the-4-ds-of-ai-fluency-behavioral-indicators" target="_blank" rel="noopener">Cited: Anthropic Academy · Fluency 4Ds</a>
+      <div class="methods" id="method-cards"></div>
+      <div class="split">
+        <div>
+          <label class="field-label tight" for="when">When</label>
+          <textarea id="when" rows="3" placeholder="From a PR / changelog — the unit is release notes."></textarea>
+        </div>
+        <div>
+          <label class="field-label tight" for="not-when">Not when</label>
+          <textarea id="not-when" rows="3" placeholder="Not for marketing, blog posts, or meeting summaries."></textarea>
+        </div>
+      </div>
+      <label class="field-label tight" for="body">Steps</label>
+      <textarea id="body" rows="6" placeholder="Short procedure. Depth goes in references/ or scripts/."></textarea>
+      <details class="depth" id="depth-panel">
+        <summary>Underneath — open when needed</summary>
+        <p class="note">Progressive stubs. Simple path stays a single SKILL.md pack. Opening one includes it only after Keep.</p>
+        <label class="check"><input type="checkbox" id="depth-nested" /> Nested sub-skills</label>
+        <label class="check"><input type="checkbox" id="depth-tools" /> Tools attachments</label>
+        <label class="check"><input type="checkbox" id="depth-scripts" /> Scripts / draft.sh</label>
+      </details>
+      <div class="pack-card" id="build-pack"></div>
+      <div class="actions end">
+        <button type="button" class="btn btn-primary" id="build-continue">Continue to Prove</button>
       </div>
     </section>
   </template>
 
   <template id="tpl-prove">
     <section class="page">
-      <h1>Prove the trigger</h1>
-      <p class="lede">Non-skippable when / not-when, then should + near-miss should-not prompts. Habit before keep/kill.</p>
+      <p class="eyebrow">04  ·  TEACHABLE BENCHMARKS</p>
+      <h1>Live prove — not pass/fail theater. Show WHY.</h1>
+      <p class="lede">Should wake / should not. Each case leaves craft in your hands. Prove before Keep.</p>
       <div class="split">
         <div>
           <label class="field-label tight" for="when">When</label>
-          <textarea id="when" rows="3" placeholder="Teammate asks how to ship a hotfix, or you are about to paste the Slack checklist again."></textarea>
+          <textarea id="when" rows="3"></textarea>
         </div>
         <div>
           <label class="field-label tight" for="not-when">Not when</label>
-          <textarea id="not-when" rows="3" placeholder="Routine feature deploys, docs-only questions, or when severity is already confirmed and runbook is open."></textarea>
+          <textarea id="not-when" rows="3"></textarea>
         </div>
       </div>
-      <h2 class="subhead">Trigger-proof prompts</h2>
-      <div class="prompts" id="prompts"></div>
+      <div class="prompt-edit">
+        <div>
+          <label class="field-label tight" for="should">Should wake</label>
+          <textarea id="should" rows="4"></textarea>
+        </div>
+        <div>
+          <label class="field-label tight" for="should-not">Should not</label>
+          <textarea id="should-not" rows="4"></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="run-prove">Prove trigger</button>
+      </div>
+      <div class="bench" id="bench"></div>
+      <p class="error" id="prove-error" hidden></p>
       <div class="actions end">
-        <button type="button" class="btn btn-primary" id="prove-continue">Continue to fill</button>
+        <button type="button" class="btn btn-primary" id="prove-continue" disabled>You’ve proved it — decide</button>
       </div>
     </section>
   </template>
 
-  <template id="tpl-fill">
+  <template id="tpl-dispose">
     <section class="page">
-      <h1 id="fill-title">Fill · Delegation</h1>
-      <p class="lede">Current D draft. Regenerate this section or Skip this D (shows as Skipped in preview).</p>
-      <div class="chips" id="d-chips"></div>
-      <div class="draft">
-        <p class="draft-kicker" id="draft-kicker">DELEGATION (draft)</p>
-        <div class="draft-body" id="draft-body"></div>
-      </div>
-      <div class="actions spread">
-        <div class="row">
-          <button type="button" class="btn btn-ghost" id="fill-skip">Skip this D</button>
-          <button type="button" class="btn btn-accent" id="fill-regen">Regenerate section</button>
+      <p class="eyebrow">05  ·  KEEP / THROW — HERO</p>
+      <h1>The sacred gate. Not Save draft.</h1>
+      <div class="hero">
+        <p class="hero-title">You’ve proved the trigger. Decide.</p>
+        <p class="hero-lede">LLM proposed. You dispose. Keep writes the skill pack. Throw away writes nothing — junk never sticks.</p>
+        <div class="pack-card" id="dispose-pack"></div>
+        <p class="error" id="dispose-error" hidden></p>
+        <div class="actions dispose">
+          <button type="button" class="btn btn-primary" id="keep">Keep — write skill pack</button>
+          <button type="button" class="btn btn-throw" id="throw">Throw away — write nothing</button>
         </div>
-        <button type="button" class="btn btn-primary" id="fill-continue">Continue</button>
+        <p class="note">SoT §4 · Reject as ignore is a falsifier. Dispose stays the primary CTA.</p>
       </div>
     </section>
   </template>
 
-  <template id="tpl-preview">
+  <template id="tpl-done-keep">
     <section class="page">
-      <h1>Preview · then dispose</h1>
-      <p class="lede">Read-only SKILL.md. Accept writes to disk. Reject writes nothing. No Save draft hero.</p>
-      <div class="preview" id="preview-card"></div>
-      <p class="error" id="preview-error" hidden></p>
-      <div class="actions end dispose">
-        <button type="button" class="btn btn-danger" id="reject">Reject — writes nothing</button>
-        <button type="button" class="btn btn-primary" id="accept">Accept — write SKILL.md</button>
-      </div>
-      <p class="note">Draft is ephemeral until Accept. Reject = zero durable write.</p>
-    </section>
-  </template>
-
-  <template id="tpl-done-accept">
-    <section class="page center">
-      <div class="done-card">
-        <span class="badge badge-ok">Accepted</span>
-        <h1>SKILL.md written</h1>
-        <p class="lede">Durable path on disk. Host create can pick up from here — Open Skills gate is done.</p>
+      <p class="eyebrow">06  ·  DONE</p>
+      <div class="done-card keep">
+        <span class="badge badge-ok">Kept</span>
+        <h1>Skill pack written</h1>
+        <p class="lede">Durable agentskills.io pack — When / Not when in the wake line. Hosts already understand this shape.</p>
+        <div class="pack-card" id="kept-pack"></div>
         <div class="path-box">
           <p class="draft-kicker">Path</p>
-          <p class="path" id="accept-path"></p>
+          <p class="path" id="keep-path"></p>
         </div>
         <div class="row">
-          <button type="button" class="btn btn-ghost" id="open-folder">Open folder</button>
-          <button type="button" class="btn btn-primary" id="accept-done">Done</button>
+          <button type="button" class="btn btn-ghost" id="open-skill">Open SKILL.md</button>
+          <button type="button" class="btn btn-primary" id="keep-done">Start another</button>
         </div>
       </div>
     </section>
   </template>
 
-  <template id="tpl-done-reject">
-    <section class="page center">
-      <div class="done-card">
-        <span class="badge badge-no">Rejected</span>
+  <template id="tpl-done-throw">
+    <section class="page">
+      <p class="eyebrow">06  ·  DONE</p>
+      <div class="done-card throw">
+        <span class="badge badge-no">Thrown away</span>
         <h1>Nothing written</h1>
-        <p class="lede">Reject = zero durable write. Session draft discarded. Disk unchanged.</p>
+        <p class="lede">Throw away is success when the skill isn’t ready to keep. Zero durable skill files. Disk unchanged.</p>
         <div class="path-box">
           <p class="draft-kicker">Confirmed</p>
-          <p class="path">No SKILL.md on disk. No path. Ephemeral draft cleared.</p>
+          <p class="path">No SKILL.md. No pack. Draft discarded.</p>
         </div>
+        <div class="learn"><p class="learn-kicker">I learned…</p><p>Throw away is success when the skill isn’t ready to keep.</p></div>
         <div class="row">
-          <button type="button" class="btn btn-ghost" id="start-over">Start over</button>
-          <button type="button" class="btn btn-primary" id="reject-done">Done</button>
+          <button type="button" class="btn btn-primary" id="throw-done">Start another</button>
         </div>
       </div>
     </section>

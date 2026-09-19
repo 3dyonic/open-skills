@@ -1,8 +1,4 @@
-"""Anthropic Academy Fluency 4Ds method cards.
-
-UI card blurbs match Craft Ready Figma 1:16 (no invented chrome).
-Quoted behavioral indicators come from the Academy fetch — never paraphrased.
-"""
+"""Anthropic Academy Fluency 4Ds — method cite for Build (not a second product)."""
 
 from __future__ import annotations
 
@@ -14,7 +10,6 @@ ACADEMY_INDICATORS_URL = (
 
 DS = ("delegation", "description", "discernment", "diligence")
 
-# Craft Ready frame 1:16 — card titles + blurbs. Do not invent alternate chrome.
 METHOD_CARDS: tuple[dict[str, str], ...] = (
     {
         "id": "delegation",

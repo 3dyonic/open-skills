@@ -1,4 +1,4 @@
-"""Server-only LLM fill/refine. Human disposes. No client-side model calls."""
+"""Server-only LLM draft/refine. Human disposes. No client-side model calls."""
 
 from __future__ import annotations
 
@@ -27,19 +27,40 @@ def _quotes_block(cite: AcademyCite, method_id: str) -> str:
     )
 
 
-def stub_fill(session: Session, method_id: str, cite: AcademyCite) -> str:
-    """Deterministic fill used in tests and when no LLM key is set.
+def stub_when(job: str) -> str:
+    flat = " ".join(job.split())
+    return f"Someone asks you to do this job: {flat}"
 
-    Uses the job + cited Academy text only. Does not invent 4D essays.
-    """
+
+def stub_not_when(_job: str) -> str:
+    return (
+        "The request is a different job, a near-miss, marketing or blog prose, "
+        "or only shares a vague verb like summarize."
+    )
+
+
+def stub_body(session: Session, cite: AcademyCite) -> str:
+    quoted = cite.quotes.get(session.method or "description") or []
+    cite_line = quoted[0] if quoted else (cite.excerpt[:180] if cite.excerpt else "cite only; no invented method prose")
+    job = " ".join(session.job.split())
+    return (
+        f"1. Confirm the job is: {job}\n"
+        f"2. Check When / Not when before loading the rest of the pack.\n"
+        f"3. Follow the short procedure; put depth in references/ or scripts/ if needed.\n"
+        f"4. Human Keep writes the pack; Throw away writes nothing.\n"
+        f"Cited indicator: {cite_line}"
+    )
+
+
+def stub_fill(session: Session, method_id: str, cite: AcademyCite) -> str:
+    """Deterministic fill used in tests and when no LLM key is set."""
     quoted = cite.quotes.get(method_id) or []
     cite_line = quoted[0] if quoted else (cite.excerpt[:180] if cite.excerpt else "cite only; no invented method prose")
-    job = " ".join(session.intent.split())
-    label = method_name(method_id)
+    job = " ".join(session.job.split())
     if method_id == "delegation":
         return (
             f"Agent drafts the procedure for: {job}\n"
-            f"You own live confirmation and the final dispose.\n"
+            f"You own live confirmation and the final dispose (Keep / Throw away).\n"
             f"Cited indicator: {cite_line}"
         )
     if method_id == "description":
@@ -63,14 +84,14 @@ def stub_fill(session: Session, method_id: str, cite: AcademyCite) -> str:
 
 
 def stub_prompts(session: Session) -> tuple[list[str], list[str]]:
-    job = " ".join(session.intent.split())
+    job = " ".join(session.job.split())
     should = [
-        f"Walk me through this job: {job}",
+        f"Help me do this job now: {job}",
         f"I keep redoing this; capture it as a skill: {job}",
     ]
     should_not = [
-        "How do I write a product brief for next quarter?",
-        "Open the runbook — I already confirmed severity and on-call.",
+        "Write a blog post about our product launch.",
+        "Summarize this meeting for the team.",
     ]
     return should, should_not
 
@@ -108,12 +129,12 @@ def _anthropic_text(prompt: str, *, timeout: float = 30.0) -> str | None:
 
 def fill_section(session: Session, method_id: str, cite: AcademyCite) -> str:
     prompt = (
-        "Fill one SKILL.md section. Server fill only; the human will Accept or Reject.\n"
+        "Fill one SKILL.md section. Server fill only; the human will Keep or Throw away.\n"
         "Quote Academy indicators. Do not invent 4D method prose.\n"
         f"Citation: {ACADEMY_INDICATORS_URL}\n"
         f"Section: {method_name(method_id)}\n"
         f"Quoted indicators:\n{_quotes_block(cite, method_id)}\n"
-        f"Job: {session.intent}\n"
+        f"Job: {session.job}\n"
         f"When: {session.when}\n"
         f"Not when: {session.not_when}\n"
         "Write a short section body (3–6 lines). No frontmatter. No chrome."
@@ -122,12 +143,34 @@ def fill_section(session: Session, method_id: str, cite: AcademyCite) -> str:
     return text or stub_fill(session, method_id, cite)
 
 
+def draft_build(session: Session, cite: AcademyCite) -> Session:
+    """Fill empty Build fields from the job. Does not write a pack."""
+    if not session.when:
+        session.when = stub_when(session.job)
+    if not session.not_when:
+        session.not_when = stub_not_when(session.job)
+    if not session.body:
+        session.body = stub_body(session, cite)
+    if not session.should or not session.should_not:
+        should, should_not = refine_prompts(session, cite)
+        if not session.should:
+            session.should = should
+        if not session.should_not:
+            session.should_not = should_not
+    method_id = session.method or "description"
+    if session.sections[method_id].status == "empty":
+        session.sections[method_id].status = "filled"
+        session.sections[method_id].body = fill_section(session, method_id, cite)
+    return session
+
+
 def refine_prompts(session: Session, cite: AcademyCite) -> tuple[list[str], list[str]]:
     prompt = (
         "Propose trigger-proof prompts for a skill. Return JSON only:\n"
         '{"should":["...","..."],"should_not":["...","..."]}\n'
         "Two should (on-trigger) and two should-not (near-miss) lines.\n"
-        f"Job: {session.intent}\n"
+        "Include one near-miss that a vague wake line would wrongly fire on.\n"
+        f"Job: {session.job}\n"
         f"When: {session.when}\n"
         f"Not when: {session.not_when}\n"
         f"Academy cite: {ACADEMY_INDICATORS_URL}\n"

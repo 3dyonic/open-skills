@@ -1,4 +1,4 @@
-"""Thin host: wizard UI + server fill + human dispose."""
+"""Workshop host: job → build → prove → Keep writes pack / Throw away writes nothing."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from app.academy import AcademyCite, fetch_academy_indicators
 from app.gate import GateError, Store
-from app.llm import fill_section, refine_prompts
+from app.llm import draft_build, fill_section
 from app.methods import methods_payload
 from app.skill_md import render_skill_md
 
@@ -54,24 +54,32 @@ def _http(exc: GateError) -> HTTPException:
     return HTTPException(status_code=status, detail={"code": exc.code, "message": exc.message})
 
 
-class IntentIn(BaseModel):
-    intent: str = Field(min_length=1)
+class JobIn(BaseModel):
+    job: str = Field(default="")
+    intent: str = Field(default="")
+
+    def text(self) -> str:
+        return (self.job or self.intent).strip()
 
 
-class MethodIn(BaseModel):
-    method: str
+class BuildIn(BaseModel):
+    when: str | None = None
+    not_when: str | None = None
+    body: str | None = None
+    method: str | None = None
+    should: list[str] | None = None
+    should_not: list[str] | None = None
+    depth: dict[str, bool] | None = None
+    continue_to_prove: bool = False
+    fill_action: str | None = None
 
 
 class ProveIn(BaseModel):
-    when: str = ""
-    not_when: str = ""
+    when: str | None = None
+    not_when: str | None = None
     should: list[str] | None = None
     should_not: list[str] | None = None
-    continue_to_fill: bool = False
-
-
-class FillIn(BaseModel):
-    action: str
+    continue_to_dispose: bool = False
 
 
 @app.get("/health")
@@ -95,9 +103,10 @@ def api_academy() -> dict:
 
 
 @app.post("/api/sessions")
-def create_session(body: IntentIn) -> dict:
+def create_session(body: JobIn) -> dict:
     try:
-        session = _store.create(body.intent)
+        session = _store.create(body.text())
+        draft_build(session, _academy)
     except GateError as exc:
         raise _http(exc) from exc
     return session.as_dict()
@@ -111,11 +120,27 @@ def get_session(session_id: str) -> dict:
         raise _http(exc) from exc
 
 
-@app.post("/api/sessions/{session_id}/method")
-def pick_method(session_id: str, body: MethodIn) -> dict:
+@app.post("/api/sessions/{session_id}/build")
+def build(session_id: str, body: BuildIn) -> dict:
     try:
         session = _store.get(session_id)
-        _store.pick_method(session, body.method)
+        if body.fill_action == "skip":
+            _store.skip_current(session)
+        elif body.fill_action == "regen":
+            current = session.current_d or session.method or "description"
+            text = fill_section(session, current, _academy)
+            _store.apply_fill(session, text)
+        _store.build(
+            session,
+            when=body.when,
+            not_when=body.not_when,
+            body=body.body,
+            method=body.method,
+            should=body.should,
+            should_not=body.should_not,
+            depth=body.depth,
+            continue_to_prove=body.continue_to_prove,
+        )
     except GateError as exc:
         raise _http(exc) from exc
     return session.as_dict()
@@ -125,74 +150,38 @@ def pick_method(session_id: str, body: MethodIn) -> dict:
 def prove(session_id: str, body: ProveIn) -> dict:
     try:
         session = _store.get(session_id)
-        _store.set_prove(
+        _store.prove(
             session,
             when=body.when,
             not_when=body.not_when,
             should=body.should,
             should_not=body.should_not,
+            continue_to_dispose=body.continue_to_dispose,
         )
-        if not session.should or not session.should_not:
-            should, should_not = refine_prompts(session, _academy)
-            session.should = should
-            session.should_not = should_not
-        if body.continue_to_fill:
-            _store.continue_from_prove(session)
-            current = session.current_d
-            if current and session.sections[current].status == "empty":
-                body_text = fill_section(session, current, _academy)
-                _store.apply_fill(session, body_text)
     except GateError as exc:
         raise _http(exc) from exc
     return session.as_dict()
 
 
-@app.post("/api/sessions/{session_id}/fill")
-def fill(session_id: str, body: FillIn) -> dict:
+@app.post("/api/sessions/{session_id}/keep")
+def keep(session_id: str) -> dict:
     try:
         session = _store.get(session_id)
-        action = body.action
-        if action == "skip":
-            _store.skip_current(session)
-        elif action == "regen":
-            current = session.current_d
-            if not current:
-                raise GateError("bad_step", "No current D to fill.")
-            text = fill_section(session, current, _academy)
-            _store.apply_fill(session, text)
-        elif action == "continue":
-            _store.continue_fill(session)
-        else:
-            raise GateError("bad_action", "Fill action must be skip, regen, or continue.")
-        if session.step == "fill" and session.current_d:
-            current = session.current_d
-            if session.sections[current].status == "empty":
-                text = fill_section(session, current, _academy)
-                _store.apply_fill(session, text)
-    except GateError as exc:
-        raise _http(exc) from exc
-    return session.as_dict()
-
-
-@app.post("/api/sessions/{session_id}/accept")
-def accept(session_id: str) -> dict:
-    try:
-        session = _store.get(session_id)
-        path = _store.accept(session, skills_dir())
+        path = _store.keep(session, skills_dir())
     except GateError as exc:
         raise _http(exc) from exc
     return {**session.as_dict(), "path": str(path)}
 
 
-@app.post("/api/sessions/{session_id}/reject")
-def reject(session_id: str) -> dict:
+@app.post("/api/sessions/{session_id}/throw")
+def throw_away(session_id: str) -> dict:
     try:
         session = _store.get(session_id)
-        before = {p for p in skills_dir().rglob("SKILL.md")}
-        _store.reject(session, skills_dir())
-        after = {p for p in skills_dir().rglob("SKILL.md")}
+        before = {p for p in skills_dir().rglob("*") if p.is_file()}
+        _store.throw_away(session, skills_dir())
+        after = {p for p in skills_dir().rglob("*") if p.is_file()}
         if after - before:
-            raise GateError("reject_wrote", "Reject must write nothing.")
+            raise GateError("throw_wrote", "Throw away must write nothing.")
     except GateError as exc:
         raise _http(exc) from exc
     return session.as_dict()
@@ -204,8 +193,11 @@ def skill_file(session_id: str) -> PlainTextResponse:
         session = _store.get(session_id)
     except GateError as exc:
         raise _http(exc) from exc
-    if session.disposed != "accept" or not session.written_path:
-        raise HTTPException(status_code=404, detail={"code": "not_written", "message": "No SKILL.md until Accept."})
+    if session.disposed != "keep" or not session.written_path:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "not_written", "message": "No skill pack until Keep."},
+        )
     path = Path(session.written_path)
     return PlainTextResponse(path.read_text(encoding="utf-8"), media_type="text/markdown")
 

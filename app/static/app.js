@@ -1,30 +1,34 @@
 (() => {
-  const STEPS = {
-    intent: "Step 1 · Intent",
-    methods: "Step 2 · Methods",
-    prove: "Step 3 · Prove trigger",
-    fill: "Step 4 · Fill section",
-    preview: "Step 5 · Preview · dispose",
-    done_accept: "Done · Accept",
-    done_reject: "Done · Reject",
-  };
+  const FLOW = [
+    { id: "start", n: "1", t: "Start", d: "Empty state — make a skill that knows when to help" },
+    { id: "job", n: "2", t: "Describe", d: "Say the job in plain words" },
+    { id: "build", n: "3", t: "Build", d: "Steer method, body, nested pieces" },
+    { id: "prove", n: "4", t: "Prove", d: "Should wake / should not — with why" },
+    { id: "dispose", n: "5", t: "Keep / Throw", d: "Sacred dispose gate" },
+    { id: "done", n: "6", t: "Done", d: "Path to pack — or nothing saved" },
+  ];
 
-  const D_NAMES = {
-    delegation: "Delegation",
-    description: "Description",
-    discernment: "Discernment",
-    diligence: "Diligence",
+  const NAV = {
+    start: "1 · Start",
+    job: "2 · Describe",
+    build: "3 · Build",
+    prove: "4 · Prove",
+    dispose: "5 · Keep / Throw",
+    done_keep: "6 · Done",
+    done_throw: "6 · Done",
   };
 
   const state = {
     session: null,
     methods: null,
-    picked: null,
+    picked: "description",
+    screen: "start",
   };
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const app = $("#app");
   const navStep = $("#nav-step");
+  const rail = $("#rail");
 
   async function api(path, opts = {}) {
     const res = await fetch(path, {
@@ -44,209 +48,236 @@
     app.replaceChildren(tpl.content.cloneNode(true));
   }
 
-  function busy(btn, on) {
-    if (!btn) return;
-    btn.disabled = on;
+  function lines(value) {
+    return (value || "")
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  function paintRail() {
+    const step = state.session?.step || state.screen;
+    const current =
+      step === "done_keep" || step === "done_throw" ? "done" : step === "start" || !state.session ? "start" : step;
+    rail.replaceChildren();
+    FLOW.forEach((item) => {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.on = item.id === current ? "1" : "0";
+      btn.innerHTML = `<span class="n">${item.n}</span><span class="t">${item.t}</span><span class="d">${item.d}</span>`;
+      li.appendChild(btn);
+      rail.appendChild(li);
+    });
+  }
+
+  function paintPack(el, session) {
+    if (!el || !session) return;
+    const tree = (session.pack_tree || []).join("\n");
+    el.innerHTML = `<p class="kicker"></p><h2></h2><pre></pre>`;
+    el.querySelector(".kicker").textContent =
+      session.disposed === "keep" ? "SKILL PACK  ·  AFTER KEEP" : "SKILL PACK  ·  ONLY AFTER KEEP";
+    el.querySelector("h2").textContent = `${session.name}/`;
+    el.querySelector("pre").textContent = tree.split("\n").slice(1).join("\n");
   }
 
   function render() {
-    const step = state.session?.step || "intent";
-    navStep.textContent = STEPS[step] || STEPS.intent;
-    if (step === "intent" || !state.session) return renderIntent();
-    if (step === "methods") return renderMethods();
+    const step = state.session?.step || state.screen || "start";
+    navStep.textContent = NAV[step] || NAV.start;
+    paintRail();
+    if (!state.session || step === "job") return renderJob();
+    if (step === "build") return renderBuild();
     if (step === "prove") return renderProve();
-    if (step === "fill") return renderFill();
-    if (step === "preview") return renderPreview();
-    if (step === "done_accept") return renderDoneAccept();
-    if (step === "done_reject") return renderDoneReject();
+    if (step === "dispose") return renderDispose();
+    if (step === "done_keep") return renderDoneKeep();
+    if (step === "done_throw") return renderDoneThrow();
+    return renderStart();
   }
 
-  function renderIntent() {
-    mount("tpl-intent");
-    const ta = $("#intent");
-    if (state.session?.intent) ta.value = state.session.intent;
-    $("#intent-continue").addEventListener("click", async (e) => {
-      const intent = ta.value.trim();
-      if (!intent) {
+  function renderStart() {
+    state.screen = "start";
+    navStep.textContent = NAV.start;
+    paintRail();
+    mount("tpl-start");
+    const grid = $("#start-flow");
+    FLOW.forEach((item) => {
+      const card = document.createElement("article");
+      card.className = "flow-card";
+      card.innerHTML = `<span class="n">${item.n}</span><strong>${item.t}</strong><span>${item.d}</span>`;
+      grid.appendChild(card);
+    });
+    $("#start-workshop").addEventListener("click", () => {
+      state.screen = "job";
+      renderJob();
+    });
+  }
+
+  function renderJob() {
+    mount("tpl-job");
+    const ta = $("#job");
+    if (state.session?.job) ta.value = state.session.job;
+    $("#job-continue").addEventListener("click", async (e) => {
+      const job = ta.value.trim();
+      if (!job) {
         ta.focus();
         return;
       }
-      busy(e.currentTarget, true);
+      e.currentTarget.disabled = true;
       try {
         state.session = await api("/api/sessions", {
           method: "POST",
-          body: JSON.stringify({ intent }),
+          body: JSON.stringify({ job }),
         });
+        state.picked = state.session.method || "description";
         render();
       } catch (err) {
         alert(err.message);
-        busy(e.currentTarget, false);
+        e.currentTarget.disabled = false;
       }
     });
   }
 
-  function renderMethods() {
-    mount("tpl-methods");
-    const cards = $("#method-cards");
-    const methods = state.methods?.methods || [];
+  function renderBuild() {
+    mount("tpl-build");
     const cite = state.methods?.citation;
     if (cite) {
       const a = $("#academy-cite");
       a.href = cite.url;
       a.textContent = cite.label;
     }
-    if (!state.picked && state.session?.method) state.picked = state.session.method;
-    methods.forEach((m) => {
+    state.picked = state.session.method || state.picked || "description";
+    const cards = $("#method-cards");
+    (state.methods?.methods || []).forEach((m) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "card" + (state.picked === m.id ? " sel" : "");
       btn.innerHTML = `<strong>${m.name}</strong><span>${m.card}</span>`;
       btn.addEventListener("click", () => {
         state.picked = m.id;
-        renderMethods();
+        renderBuild();
       });
       cards.appendChild(btn);
     });
-    $("#methods-continue").addEventListener("click", async (e) => {
-      if (!state.picked) return;
-      busy(e.currentTarget, true);
+    $("#when").value = state.session.when || "";
+    $("#not-when").value = state.session.not_when || "";
+    $("#body").value = state.session.body || "";
+    $("#depth-nested").checked = !!state.session.depth?.nested;
+    $("#depth-tools").checked = !!state.session.depth?.tools;
+    $("#depth-scripts").checked = !!state.session.depth?.scripts;
+    if (state.session.depth?.nested || state.session.depth?.tools || state.session.depth?.scripts) {
+      $("#depth-panel").open = true;
+    }
+    paintPack($("#build-pack"), state.session);
+    $("#build-continue").addEventListener("click", async (e) => {
+      e.currentTarget.disabled = true;
       try {
-        state.session = await api(`/api/sessions/${state.session.id}/method`, {
+        state.session = await api(`/api/sessions/${state.session.id}/build`, {
           method: "POST",
-          body: JSON.stringify({ method: state.picked }),
+          body: JSON.stringify(buildPayload(true)),
         });
         render();
       } catch (err) {
         alert(err.message);
-        busy(e.currentTarget, false);
+        e.currentTarget.disabled = false;
       }
     });
+  }
+
+  function buildPayload(continueToProve) {
+    return {
+      when: $("#when").value,
+      not_when: $("#not-when").value,
+      body: $("#body") ? $("#body").value : state.session.body,
+      method: state.picked,
+      should: state.session.should,
+      should_not: state.session.should_not,
+      depth: {
+        nested: !!$("#depth-nested")?.checked,
+        tools: !!$("#depth-tools")?.checked,
+        scripts: !!$("#depth-scripts")?.checked,
+      },
+      continue_to_prove: !!continueToProve,
+    };
   }
 
   function renderProve() {
     mount("tpl-prove");
     $("#when").value = state.session.when || "";
     $("#not-when").value = state.session.not_when || "";
-    paintPrompts();
-    if (!state.session.should.length && !state.session.should_not.length) {
-      refreshPrompts();
+    $("#should").value = (state.session.should || []).join("\n");
+    $("#should-not").value = (state.session.should_not || []).join("\n");
+    paintBench();
+    $("#prove-continue").disabled = !state.session.proved;
+    $("#run-prove").addEventListener("click", () => runProve(false));
+    $("#prove-continue").addEventListener("click", () => runProve(true));
+  }
+
+  async function runProve(continueToDispose) {
+    const err = $("#prove-error");
+    if (err) err.hidden = true;
+    try {
+      state.session = await api(`/api/sessions/${state.session.id}/prove`, {
+        method: "POST",
+        body: JSON.stringify({
+          when: $("#when").value,
+          not_when: $("#not-when").value,
+          should: lines($("#should").value),
+          should_not: lines($("#should-not").value),
+          continue_to_dispose: continueToDispose,
+        }),
+      });
+      if (continueToDispose) return render();
+      paintBench();
+      $("#prove-continue").disabled = !state.session.proved;
+    } catch (e) {
+      if (err) {
+        err.hidden = false;
+        err.textContent = e.message;
+      } else {
+        alert(e.message);
+      }
     }
-    $("#prove-continue").addEventListener("click", async (e) => {
-      const when = $("#when").value.trim();
-      const notWhen = $("#not-when").value.trim();
-      if (!when || !notWhen) {
-        alert("When and Not when must be non-empty.");
-        return;
-      }
-      busy(e.currentTarget, true);
-      try {
-        state.session = await api(`/api/sessions/${state.session.id}/prove`, {
-          method: "POST",
-          body: JSON.stringify({
-            when,
-            not_when: notWhen,
-            should: state.session.should,
-            should_not: state.session.should_not,
-            continue_to_fill: true,
-          }),
-        });
-        render();
-      } catch (err) {
-        alert(err.message);
-        busy(e.currentTarget, false);
-      }
-    });
   }
 
-  async function refreshPrompts() {
-    const when = $("#when")?.value || state.session.when;
-    const notWhen = $("#not-when")?.value || state.session.not_when;
-    state.session = await api(`/api/sessions/${state.session.id}/prove`, {
-      method: "POST",
-      body: JSON.stringify({ when, not_when: notWhen }),
-    });
-    paintPrompts();
-  }
-
-  function paintPrompts() {
-    const box = $("#prompts");
+  function paintBench() {
+    const box = $("#bench");
     if (!box) return;
     box.replaceChildren();
-    (state.session.should || []).forEach((t) => box.appendChild(promptRow("should", t)));
-    (state.session.should_not || []).forEach((t) => box.appendChild(promptRow("should-not", t)));
-  }
-
-  function promptRow(kind, text) {
-    const row = document.createElement("div");
-    row.className = "prompt";
-    const tag = kind === "should" ? "tag-should" : "tag-should-not";
-    row.innerHTML = `<span class="tag ${tag}">${kind}</span><span></span>`;
-    row.lastChild.textContent = `“${text}”`;
-    return row;
-  }
-
-  function renderFill() {
-    mount("tpl-fill");
-    const current = state.session.current_d;
-    const name = D_NAMES[current] || current;
-    $("#fill-title").textContent = `Fill · ${name}`;
-    $("#draft-kicker").textContent = `${name.toUpperCase()} (draft)`;
-    const sec = state.session.sections[current] || {};
-    $("#draft-body").textContent = sec.body || "—";
-    const chips = $("#d-chips");
-    (state.session.order || Object.keys(D_NAMES)).forEach((id) => {
-      const chip = document.createElement("span");
-      chip.className = "chip" + (id === current ? " on" : "");
-      chip.textContent = D_NAMES[id] || id;
-      chips.appendChild(chip);
+    (state.session.benchmarks || []).forEach((row) => {
+      const card = document.createElement("article");
+      card.className = "bench-card";
+      const kind = row.badge === "SHOULD WAKE" ? "should" : row.badge === "SHOULD NOT" ? "should-not" : "fail";
+      card.innerHTML = `
+        <span class="badge badge-${kind}"></span>
+        <p class="prompt"></p>
+        <p class="verdict"></p>
+        <p class="why"></p>
+        <p class="teach"></p>`;
+      card.querySelector(".badge").textContent = row.badge;
+      card.querySelector(".prompt").textContent = `“${row.prompt}”`;
+      card.querySelector(".verdict").textContent = row.verdict;
+      card.querySelector(".why").textContent = row.why;
+      card.querySelector(".teach").textContent = row.teach;
+      box.appendChild(card);
     });
-    $("#fill-skip").addEventListener("click", () => fillAction("skip"));
-    $("#fill-regen").addEventListener("click", () => fillAction("regen"));
-    $("#fill-continue").addEventListener("click", () => fillAction("continue"));
   }
 
-  async function fillAction(action) {
-    try {
-      state.session = await api(`/api/sessions/${state.session.id}/fill`, {
-        method: "POST",
-        body: JSON.stringify({ action }),
-      });
-      render();
-    } catch (err) {
-      alert(err.message);
-    }
-  }
-
-  function renderPreview() {
-    mount("tpl-preview");
-    const card = $("#preview-card");
-    const whenSec = sectionBlock("WHEN · NOT WHEN", null,
-      `When: ${state.session.when}\nNot when: ${state.session.not_when}`);
-    card.appendChild(whenSec);
-    (state.session.preview || []).forEach((sec) => {
-      card.appendChild(sectionBlock(sec.name.toUpperCase(), sec.badge, sec.body, !!sec.badge));
-    });
-    const blocked = !state.session.when.trim() || !state.session.not_when.trim();
-    const accept = $("#accept");
-    const err = $("#preview-error");
-    if (blocked) {
-      accept.disabled = true;
-      err.hidden = false;
-      err.textContent = "Accept blocked: When and Not when must be non-empty.";
-    }
-    accept.addEventListener("click", async () => {
-      if (blocked) return;
+  function renderDispose() {
+    mount("tpl-dispose");
+    paintPack($("#dispose-pack"), state.session);
+    const err = $("#dispose-error");
+    $("#keep").addEventListener("click", async () => {
       try {
-        state.session = await api(`/api/sessions/${state.session.id}/accept`, { method: "POST" });
+        state.session = await api(`/api/sessions/${state.session.id}/keep`, { method: "POST" });
         render();
       } catch (e) {
         err.hidden = false;
         err.textContent = e.message;
       }
     });
-    $("#reject").addEventListener("click", async () => {
+    $("#throw").addEventListener("click", async () => {
       try {
-        state.session = await api(`/api/sessions/${state.session.id}/reject`, { method: "POST" });
+        state.session = await api(`/api/sessions/${state.session.id}/throw`, { method: "POST" });
         render();
       } catch (e) {
         err.hidden = false;
@@ -255,46 +286,26 @@
     });
   }
 
-  function sectionBlock(title, badge, body, muted) {
-    const el = document.createElement("div");
-    el.className = "sec";
-    const head = document.createElement("div");
-    head.className = "sec-head";
-    const h = document.createElement("h3");
-    h.textContent = title;
-    head.appendChild(h);
-    if (badge) {
-      const b = document.createElement("span");
-      b.className = "badge badge-skip";
-      b.textContent = badge;
-      head.appendChild(b);
-    }
-    const p = document.createElement("p");
-    p.className = muted ? "muted" : "";
-    p.textContent = body;
-    el.append(head, p);
-    return el;
-  }
-
-  function renderDoneAccept() {
-    mount("tpl-done-accept");
-    $("#accept-path").textContent = state.session.written_path || "";
-    $("#open-folder").addEventListener("click", () => {
+  function renderDoneKeep() {
+    mount("tpl-done-keep");
+    paintPack($("#kept-pack"), state.session);
+    $("#keep-path").textContent = state.session.written_path || "";
+    $("#open-skill").addEventListener("click", () => {
       window.open(`/api/sessions/${state.session.id}/skill`, "_blank");
     });
-    $("#accept-done").addEventListener("click", reset);
+    $("#keep-done").addEventListener("click", reset);
   }
 
-  function renderDoneReject() {
-    mount("tpl-done-reject");
-    $("#start-over").addEventListener("click", reset);
-    $("#reject-done").addEventListener("click", reset);
+  function renderDoneThrow() {
+    mount("tpl-done-throw");
+    $("#throw-done").addEventListener("click", reset);
   }
 
   function reset() {
     state.session = null;
-    state.picked = null;
-    render();
+    state.picked = "description";
+    state.screen = "start";
+    renderStart();
   }
 
   async function boot() {
@@ -314,7 +325,7 @@
         ],
       };
     }
-    render();
+    renderStart();
   }
 
   boot();

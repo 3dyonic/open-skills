@@ -1,40 +1,58 @@
-from pathlib import Path
-
-import pytest
-
-from app.gate import GateError, Store
+from app.gate import Store
+from app.prove import evaluate_benchmarks
 
 
-def test_empty_when_blocks_continue_to_fill(store: Store) -> None:
-    session = store.create("Ship a hotfix checklist.")
-    store.pick_method(session, "delegation")
-    store.set_prove(session, when="", not_when="Routine deploys.")
-    with pytest.raises(GateError) as exc:
-        store.continue_from_prove(session)
-    assert exc.value.code == "empty_trigger"
+def test_teachable_why_pass_fail_surfaced(store: Store) -> None:
+    session = store.create("Draft release notes from PR diffs for the changelog.")
+    store.build(
+        session,
+        when="Release notes from a PR or changelog.",
+        not_when="Marketing, blog posts, or product launch prose.",
+        should=["Draft release notes from this PR diff for the changelog."],
+        should_not=[
+            "Write a blog post about our product launch.",
+            "Summarize this meeting for the team.",
+        ],
+        continue_to_prove=True,
+    )
+    store.prove(session)
+    assert session.proved is True
+    assert session.benchmarks
+    assert all(row["why"].startswith("WHY:") for row in session.benchmarks)
+    assert all(row["teach"] for row in session.benchmarks)
+    assert all(row["verdict"] for row in session.benchmarks)
+    badges = {row["badge"] for row in session.benchmarks}
+    assert "SHOULD WAKE" in badges
+    assert "SHOULD NOT" in badges
+    assert all(row["passed"] for row in session.benchmarks)
 
 
-def test_empty_when_or_not_when_blocks_accept(store: Store, skills_dir: Path) -> None:
-    session = store.create("Ship a hotfix checklist.")
-    store.pick_method(session, "delegation")
-    store.set_prove(session, when="", not_when="")
-    with pytest.raises(GateError) as exc:
-        store.accept(session, skills_dir)
-    assert exc.value.code == "empty_trigger"
-    assert list(skills_dir.rglob("SKILL.md")) == []
-
-    store.set_prove(session, when="On hotfix ask.", not_when="")
-    with pytest.raises(GateError):
-        store.accept(session, skills_dir)
-    assert list(skills_dir.rglob("SKILL.md")) == []
-
-    store.set_prove(session, when="On hotfix ask.", not_when="Docs-only.")
-    path = store.accept(session, skills_dir)
-    assert path.exists()
+def test_vague_wake_teaches_failed_case(store: Store) -> None:
+    session = store.create("Summarize things for people.")
+    store.build(
+        session,
+        when="When someone asks you to summarize.",
+        not_when="Nothing in particular.",
+        should=["Summarize the weekly notes."],
+        should_not=["Summarize this meeting for the team."],
+        continue_to_prove=True,
+    )
+    store.prove(session)
+    failed = [row for row in session.benchmarks if row["badge"] == "FAILED · TEACH"]
+    assert failed
+    assert any("vague" in row["why"].lower() or "wrong job" in row["verdict"].lower() for row in failed)
+    assert all(row["why"] and row["teach"] for row in failed)
 
 
-def test_must_pick_method(store: Store) -> None:
-    session = store.create("Ship a hotfix checklist.")
-    with pytest.raises(GateError) as exc:
-        store.pick_method(session, "marketplace")
-    assert exc.value.code == "bad_method"
+def test_evaluate_benchmarks_direct() -> None:
+    rows = evaluate_benchmarks(
+        job="Draft release notes from PR diffs for the changelog.",
+        when="Release notes from a PR or changelog.",
+        not_when="Marketing or blog posts.",
+        should=["Draft release notes from this PR diff for the changelog."],
+        should_not=["Write a blog post about our product launch."],
+    )
+    assert rows[0]["badge"] == "SHOULD WAKE"
+    assert rows[1]["badge"] == "SHOULD NOT"
+    assert rows[0]["why"].startswith("WHY:")
+    assert rows[1]["why"].startswith("WHY:")
