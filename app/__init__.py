@@ -1,1 +1,1 @@
-"""Open Skills Day-1 skill authoring: job → build → prove → Keep / Throw away."""
+"""Open Skills — skill-authoring playground. Day-1: job → build → prove → Keep / Throw away."""

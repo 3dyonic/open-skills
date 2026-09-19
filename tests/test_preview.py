@@ -46,12 +46,11 @@ def test_ui_uses_keep_throw_away_not_accept_reject() -> None:
     assert "/throw" in js
 
 
-def test_ui_is_skill_authoring_not_workshop_place() -> None:
+def test_ui_is_skill_authoring_playground_not_workshop() -> None:
     html = Path("app/static/index.html").read_text(encoding="utf-8")
     js = Path("app/static/app.js").read_text(encoding="utf-8")
-    assert "<title>Open Skills</title>" in html
-    assert "OPEN SKILLS" in html
-    assert "skill-authoring tool" in html
+    assert "Open Skills — skill-authoring playground" in html
+    assert "skill-authoring playground" in html
     assert "WORKSHOP" not in html
     assert "Workshop" not in html
     assert "workshop" not in html.lower()

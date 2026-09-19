@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Open Skills</title>
+  <title>Open Skills — skill-authoring playground</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -11,20 +11,20 @@
 </head>
 <body>
   <header class="nav">
-    <span class="nav-brand">OPEN SKILLS</span>
+    <span class="nav-brand">OPEN SKILLS  ·  SKILL-AUTHORING PLAYGROUND</span>
     <span class="nav-step" id="nav-step">1 · Start</span>
   </header>
 
-  <ol class="rail" id="rail" aria-label="Skill authoring flow"></ol>
+  <ol class="rail" id="rail" aria-label="Skill-authoring playground flow"></ol>
 
   <main id="app"></main>
 
   <template id="tpl-start">
     <section class="page">
-      <p class="eyebrow">OPEN SKILLS  ·  SKILL AUTHORING</p>
-      <h1>A skill-authoring tool that teaches good skills — and only keeps the ones you accept.</h1>
+      <p class="eyebrow">OPEN SKILLS  ·  SKILL-AUTHORING PLAYGROUND</p>
+      <h1>A skill-authoring playground that teaches good skills — and only keeps the ones you accept.</h1>
       <p class="lede">Simple on the surface. Nested skills, tools, and scripts underneath. LLM drafts; you steer. Keep writes the skill pack · Throw away writes nothing.</p>
-      <p class="cite-line">Cites open-skills SoT §1–4  ·  Academy Fluency 4Ds  ·  Inspire first — break down later</p>
+      <p class="cite-line">Cites open-skills SoT §1–4  ·  Companion example: UX/UI craft-ops (§1 expect + §3 knowledge)  ·  Inspire first — break down later</p>
       <div class="flow-grid" id="start-flow"></div>
       <div class="actions">
         <button type="button" class="btn btn-primary" id="start-author">Start — make a skill that knows when to help</button>
@@ -44,7 +44,7 @@
       <h1>Say the job in plain words</h1>
       <p class="lede">Empty start. Name the repeatable job a host should wake for — not a persona, not a marketplace listing.</p>
       <label class="field-label" for="job">The job</label>
-      <textarea id="job" rows="6" placeholder="Draft release notes from a PR diff for the changelog — our voice, not a blog post or a meeting summary."></textarea>
+      <textarea id="job" rows="6" placeholder="A UX invent request: run our craft-ops procedure (DoR before invent, then benchmarks and dispose) — not a senior-designer persona, not marketing copy."></textarea>
       <div class="actions end">
         <button type="button" class="btn btn-primary" id="job-continue">Continue to Build</button>
       </div>

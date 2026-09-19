@@ -1,8 +1,8 @@
-# Open Skills
+# Open Skills — skill-authoring playground
 
-Day-1 skill authoring: **job → build → prove (teachable benchmarks) → Keep writes a skill pack / Throw away writes nothing.**
+Day-1: **job → build → prove (teachable) → Keep writes `SKILL.md` / Throw away writes nothing.**
 
-Tracker: [OSK-16](https://juice-engine.atlassian.net/browse/OSK-16). Craft SoT: [Figma artboard 1:2](https://www.figma.com/design/Xa60SjtMsUZDYcIQyCKr1j/Open-Skills-%C2%B7-workshop-vision?node-id=1-2).
+Tracker: [OSK-16](https://juice-engine.atlassian.net/browse/OSK-16). Craft SoT: [playground vision 1:2](https://www.figma.com/design/Xa60SjtMsUZDYcIQyCKr1j/Open-Skills-%C2%B7-workshop-vision?node-id=1-2) · [UX/UI example 4:2](https://www.figma.com/design/Xa60SjtMsUZDYcIQyCKr1j/Open-Skills-%C2%B7-workshop-vision?node-id=4-2).
 
 Not a marketplace, hub, Orchestra merge, OAuth invent, Open UX catalog clone, or the retired thin-gate mockup.
 

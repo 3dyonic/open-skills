@@ -1,4 +1,4 @@
-"""Skill-authoring host: job → build → prove → Keep writes pack / Throw away writes nothing."""
+"""Open Skills — skill-authoring playground. Keep writes pack / Throw away writes nothing."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="Open Skills", lifespan=lifespan)
+app = FastAPI(title="Open Skills — skill-authoring playground", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
