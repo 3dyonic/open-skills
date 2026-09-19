@@ -191,6 +191,8 @@
       method: state.picked,
       should: state.session.should,
       should_not: state.session.should_not,
+      relevant: state.session.relevant,
+      not_relevant: state.session.not_relevant,
       depth: {
         nested: !!$("#depth-nested")?.checked,
         tools: !!$("#depth-tools")?.checked,
@@ -206,9 +208,11 @@
     $("#not-when").value = state.session.not_when || "";
     $("#should").value = (state.session.should || []).join("\n");
     $("#should-not").value = (state.session.should_not || []).join("\n");
+    $("#relevant").value = (state.session.relevant || []).join("\n");
+    $("#not-relevant").value = (state.session.not_relevant || []).join("\n");
     paintBench();
     $("#prove-continue").disabled = !state.session.proved;
-    $("#run-prove").addEventListener("click", () => runProve(false));
+    $("#run-check").addEventListener("click", () => runProve(false));
     $("#prove-continue").addEventListener("click", () => runProve(true));
   }
 
@@ -223,6 +227,8 @@
           not_when: $("#not-when").value,
           should: lines($("#should").value),
           should_not: lines($("#should-not").value),
+          relevant: lines($("#relevant").value),
+          not_relevant: lines($("#not-relevant").value),
           continue_to_dispose: continueToDispose,
         }),
       });
@@ -246,13 +252,16 @@
     (state.session.benchmarks || []).forEach((row) => {
       const card = document.createElement("article");
       card.className = "bench-card";
-      const kind = row.badge === "SHOULD WAKE" ? "should" : row.badge === "SHOULD NOT" ? "should-not" : "fail";
+      const kind = row.badge === "SHOULD WAKE" || row.badge === "RELEVANT" ? "should" : row.badge === "SHOULD NOT" || row.badge === "NOT RELEVANT" ? "should-not" : "fail";
+      const family = row.family === "output" ? "Output" : "Wake";
       card.innerHTML = `
+        <p class="learn-kicker"></p>
         <span class="badge badge-${kind}"></span>
         <p class="prompt"></p>
         <p class="verdict"></p>
         <p class="why"></p>
         <p class="teach"></p>`;
+      card.querySelector(".learn-kicker").textContent = family;
       card.querySelector(".badge").textContent = row.badge;
       card.querySelector(".prompt").textContent = `“${row.prompt}”`;
       card.querySelector(".verdict").textContent = row.verdict;

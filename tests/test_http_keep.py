@@ -12,6 +12,8 @@ def test_http_keep_writes_skill_pack(client, skills_dir) -> None:
             "body": "Draft the notes.",
             "should": ["Draft release notes from this PR diff for the changelog."],
             "should_not": ["Write a blog post about our product launch."],
+            "relevant": ["Changelog notes from the PR diff."],
+            "not_relevant": ["A 1200-word blog post about our product launch."],
             "continue_to_prove": True,
         },
     )
@@ -23,6 +25,8 @@ def test_http_keep_writes_skill_pack(client, skills_dir) -> None:
     assert proved.status_code == 200
     assert proved.json()["proved"] is True
     assert proved.json()["benchmarks"]
+    families = {row["family"] for row in proved.json()["benchmarks"]}
+    assert families == {"wake", "output"}
     kept = client.post(f"/api/sessions/{sid}/keep")
     assert kept.status_code == 200
     body = kept.json()
@@ -58,6 +62,8 @@ def test_http_throw_away_writes_nothing(client, skills_dir) -> None:
             "not_when": "Docs only.",
             "should": ["Walk me through the hotfix checklist."],
             "should_not": ["Write a blog post about our product launch."],
+            "relevant": ["Hotfix checklist: confirm severity, open the runbook."],
+            "not_relevant": ["A 1200-word blog post about our product launch."],
             "continue_to_prove": True,
         },
     )

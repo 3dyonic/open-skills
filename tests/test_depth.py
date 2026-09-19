@@ -12,6 +12,8 @@ def _proved(store: Store, *, depth: dict[str, bool] | None = None):
         body="Draft the notes.",
         should=["Draft release notes from this PR diff for the changelog."],
         should_not=["Write a blog post about our product launch."],
+        relevant=["Changelog notes from the PR diff."],
+        not_relevant=["A 1200-word blog post about our product launch."],
         depth=depth or {"nested": False, "tools": False, "scripts": False},
         continue_to_prove=True,
     )

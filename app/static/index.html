@@ -88,7 +88,7 @@
     <section class="page">
       <p class="eyebrow">04  ·  TEACHABLE BENCHMARKS</p>
       <h1>Live prove — not pass/fail theater. Show WHY.</h1>
-      <p class="lede">Should wake / should not. Each case leaves craft in your hands. Prove before Keep.</p>
+      <p class="lede">One Run check. Two result kinds: <strong>Wake</strong> (should / should-not) and <strong>Output</strong> (relevant / not). Prove before Keep. The host shells out to the rank/prove CLI.</p>
       <div class="split">
         <div>
           <label class="field-label tight" for="when">When</label>
@@ -101,16 +101,26 @@
       </div>
       <div class="prompt-edit">
         <div>
-          <label class="field-label tight" for="should">Should wake</label>
+          <label class="field-label tight" for="should">Wake · should</label>
           <textarea id="should" rows="4"></textarea>
         </div>
         <div>
-          <label class="field-label tight" for="should-not">Should not</label>
+          <label class="field-label tight" for="should-not">Wake · should not</label>
           <textarea id="should-not" rows="4"></textarea>
         </div>
       </div>
+      <div class="prompt-edit">
+        <div>
+          <label class="field-label tight" for="relevant">Output · relevant</label>
+          <textarea id="relevant" rows="3"></textarea>
+        </div>
+        <div>
+          <label class="field-label tight" for="not-relevant">Output · not</label>
+          <textarea id="not-relevant" rows="3"></textarea>
+        </div>
+      </div>
       <div class="actions">
-        <button type="button" class="btn btn-primary" id="run-prove">Prove trigger</button>
+        <button type="button" class="btn btn-primary" id="run-check">Run check</button>
       </div>
       <div class="bench" id="bench"></div>
       <p class="error" id="prove-error" hidden></p>

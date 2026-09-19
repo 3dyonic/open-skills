@@ -1,171 +1,89 @@
-"""Teachable wake benchmarks — show WHY, not pass/fail theater."""
+"""Shell out to the rank/prove CLI. No in-app eval suite."""
 
 from __future__ import annotations
 
-import re
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 from typing import Any
 
-_STOP = {
-    "the",
-    "a",
-    "an",
-    "to",
-    "for",
-    "of",
-    "and",
-    "or",
-    "this",
-    "that",
-    "from",
-    "with",
-    "our",
-    "you",
-    "your",
-    "me",
-    "i",
-    "we",
-    "it",
-    "in",
-    "on",
-    "at",
-    "as",
-    "is",
-    "be",
-    "do",
-    "my",
-    "about",
-    "into",
-    "over",
-    "than",
-    "then",
-    "when",
-    "not",
-    "use",
-    "ask",
-    "asks",
-    "someone",
-    "please",
-    "now",
-    "job",
-    "how",
-    "what",
-    "can",
-    "could",
-    "would",
-    "should",
-    "will",
-    "just",
-    "need",
-}
+from app.scheme import ProveRequest, ProveResponse, RankRequest, RankResponse
 
-_GENERIC = {
-    "summarize",
-    "summary",
-    "write",
-    "draft",
-    "help",
-    "create",
-    "make",
-    "explain",
-    "describe",
-}
+ROOT = Path(__file__).resolve().parent.parent
 
 
-def tokens(text: str) -> set[str]:
-    return {w for w in re.findall(r"[a-z0-9]+", (text or "").lower()) if w not in _STOP and len(w) > 1}
+class ProveCLIError(RuntimeError):
+    def __init__(self, message: str, *, stderr: str = "") -> None:
+        super().__init__(message)
+        self.stderr = stderr
 
 
-def _preview(text: str, limit: int = 72) -> str:
-    flat = " ".join((text or "").split())
-    if len(flat) <= limit:
-        return flat
-    return flat[: limit - 1] + "…"
-
-
-def decide_wake(prompt: str, when: str, not_when: str, job: str) -> tuple[bool, set[str], set[str]]:
-    """Return (woke, when-hits, not-when-hits). Deterministic; no LLM."""
-    prompt_toks = tokens(prompt)
-    when_toks = tokens(when) | tokens(job)
-    not_toks = tokens(not_when)
-    wake_hits = prompt_toks & when_toks
-    not_hits = prompt_toks & not_toks
-    if not_hits and len(not_hits) >= max(1, len(wake_hits)):
-        return False, wake_hits, not_hits
-    if len(wake_hits) >= 2:
-        return True, wake_hits, not_hits
-    if len(wake_hits) == 1 and not not_hits:
-        return True, wake_hits, not_hits
-    # Vague wake line + shared generic verb → over-trigger (the teachable fail).
-    if len(when_toks) < 3 and (prompt_toks & _GENERIC) and (when_toks & _GENERIC):
-        return True, wake_hits, not_hits
-    return False, wake_hits, not_hits
-
-
-def evaluate_case(
-    prompt: str,
-    *,
-    kind: str,
-    when: str,
-    not_when: str,
-    job: str,
-) -> dict[str, Any]:
-    expected_wake = kind == "should"
-    woke, wake_hits, not_hits = decide_wake(prompt, when, not_when, job)
-    passed = woke == expected_wake
-
-    if expected_wake and woke:
-        badge = "SHOULD WAKE"
-        verdict = "Woke · matched"
-        why = (
-            f"WHY: wake line names the job ({_preview(job)}) + when "
-            f"({_preview(when)})."
+def _run(command: str, payload: dict[str, Any]) -> dict[str, Any]:
+    env = os.environ.copy()
+    pythonpath = env.get("PYTHONPATH", "")
+    parts = [str(ROOT)]
+    if pythonpath:
+        parts.append(pythonpath)
+    env["PYTHONPATH"] = os.pathsep.join(parts)
+    proc = subprocess.run(
+        [sys.executable, "-m", "app.cli", command],
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+        cwd=str(ROOT),
+        env=env,
+        check=False,
+    )
+    if proc.returncode != 0:
+        raise ProveCLIError(
+            f"CLI {command} failed ({proc.returncode}): {proc.stderr.strip() or proc.stdout.strip()}",
+            stderr=proc.stderr,
         )
-        teach = "Keep this sharpness. Add a near-miss should-not next."
-    elif (not expected_wake) and (not woke):
-        badge = "SHOULD NOT"
-        verdict = "Did not wake · good"
-        why = f"WHY: not-when excludes this near-miss ({_preview(not_when)})."
-        teach = "If it had woken: tighten not-when — name the off-jobs explicitly."
-    elif expected_wake and not woke:
-        badge = "FAILED · TEACH"
-        verdict = "Did not wake · missed"
-        why = (
-            "WHY: the prompt did not match When — the wake line may be too narrow, "
-            "or this should-case is off-job."
-        )
-        teach = "Change: name the unit + when explicitly, or fix the should prompt."
-    else:
-        badge = "FAILED · TEACH"
-        verdict = "Woke · wrong job"
-        why = "WHY: description too vague — overlapping verbs fire on the wrong job."
-        teach = "Change: name the unit (the real job) + when/not-when explicitly."
-
-    return {
-        "prompt": prompt,
-        "kind": kind,
-        "woke": woke,
-        "expected_wake": expected_wake,
-        "passed": passed,
-        "badge": badge,
-        "verdict": verdict,
-        "why": why,
-        "teach": teach,
-        "wake_hits": sorted(wake_hits),
-        "not_hits": sorted(not_hits),
-    }
+    data = json.loads(proc.stdout)
+    if data.get("via") != "cli":
+        raise ProveCLIError("CLI response missing via=cli")
+    return data
 
 
-def evaluate_benchmarks(
+def run_prove(
     *,
     job: str,
     when: str,
     not_when: str,
     should: list[str],
     should_not: list[str],
+    relevant: list[str] | None = None,
+    not_relevant: list[str] | None = None,
 ) -> list[dict[str, Any]]:
-    cases: list[dict[str, Any]] = []
-    for prompt in should:
-        cases.append(evaluate_case(prompt, kind="should", when=when, not_when=not_when, job=job))
-    for prompt in should_not:
-        cases.append(evaluate_case(prompt, kind="should_not", when=when, not_when=not_when, job=job))
-    return cases
+    req = ProveRequest(
+        job=job,
+        when=when,
+        not_when=not_when,
+        should=should,
+        should_not=should_not,
+        relevant=relevant or [],
+        not_relevant=not_relevant or [],
+    )
+    data = _run("prove", req.model_dump())
+    return [row.model_dump() for row in ProveResponse.model_validate(data).cases]
+
+
+def run_rank(
+    *,
+    family: str,
+    job: str,
+    when: str,
+    not_when: str,
+    prompts: list[str],
+) -> list[dict[str, Any]]:
+    req = RankRequest(
+        family=family,  # type: ignore[arg-type]
+        job=job,
+        when=when,
+        not_when=not_when,
+        prompts=prompts,
+    )
+    data = _run("rank", req.model_dump())
+    return [row.model_dump() for row in RankResponse.model_validate(data).ranked]

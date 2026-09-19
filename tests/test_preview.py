@@ -56,6 +56,9 @@ def test_ui_is_skill_authoring_playground_not_workshop() -> None:
     assert "workshop" not in html.lower()
     assert "start-workshop" not in js
     assert "start-author" in js
+    assert "Run check" in html
+    assert "id=\"run-check\"" in html
+    assert "Prove trigger" not in html
 
 
 def test_no_old_thin_gate_figma() -> None:

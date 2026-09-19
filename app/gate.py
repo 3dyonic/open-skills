@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 from app.methods import DS, fill_order, method_name
 from app.pack import pack_tree, write_pack
-from app.prove import evaluate_benchmarks
+from app.prove import ProveCLIError, run_prove
 from app.skill_md import preview_sections, skill_name_from_job
 
 Step = Literal[
@@ -68,6 +68,8 @@ class Session:
     body: str = ""
     should: list[str] = field(default_factory=list)
     should_not: list[str] = field(default_factory=list)
+    relevant: list[str] = field(default_factory=list)
+    not_relevant: list[str] = field(default_factory=list)
     benchmarks: list[dict[str, Any]] = field(default_factory=list)
     proved: bool = False
     depth: Depth = field(default_factory=Depth)
@@ -109,6 +111,8 @@ class Session:
             "body": self.body,
             "should": self.should,
             "should_not": self.should_not,
+            "relevant": self.relevant,
+            "not_relevant": self.not_relevant,
             "sections": {k: v.as_dict() for k, v in self.sections.items()},
             "depth": self.depth.as_dict(),
         }
@@ -125,6 +129,8 @@ class Session:
             "body": self.body,
             "should": list(self.should),
             "should_not": list(self.should_not),
+            "relevant": list(self.relevant),
+            "not_relevant": list(self.not_relevant),
             "benchmarks": list(self.benchmarks),
             "proved": self.proved,
             "depth": self.depth.as_dict(),
@@ -169,6 +175,8 @@ class Store:
         method: str | None = None,
         should: list[str] | None = None,
         should_not: list[str] | None = None,
+        relevant: list[str] | None = None,
+        not_relevant: list[str] | None = None,
         depth: dict[str, bool] | None = None,
         continue_to_prove: bool = False,
     ) -> Session:
@@ -190,6 +198,10 @@ class Store:
             session.should = _clean_list(should)
         if should_not is not None:
             session.should_not = _clean_list(should_not)
+        if relevant is not None:
+            session.relevant = _clean_list(relevant)
+        if not_relevant is not None:
+            session.not_relevant = _clean_list(not_relevant)
         if depth is not None:
             session.depth = Depth(
                 nested=bool(depth.get("nested")),
@@ -232,6 +244,8 @@ class Store:
         not_when: str | None = None,
         should: list[str] | None = None,
         should_not: list[str] | None = None,
+        relevant: list[str] | None = None,
+        not_relevant: list[str] | None = None,
         continue_to_dispose: bool = False,
     ) -> Session:
         if session.disposed:
@@ -244,19 +258,32 @@ class Store:
             session.should = _clean_list(should)
         if should_not is not None:
             session.should_not = _clean_list(should_not)
+        if relevant is not None:
+            session.relevant = _clean_list(relevant)
+        if not_relevant is not None:
+            session.not_relevant = _clean_list(not_relevant)
         self._require_trigger(session)
         if not session.should or not session.should_not:
             raise GateError(
                 "empty_benchmarks",
                 "Prove needs at least one should-wake and one should-not prompt.",
             )
-        session.benchmarks = evaluate_benchmarks(
-            job=session.job,
-            when=session.when,
-            not_when=session.not_when,
-            should=session.should,
-            should_not=session.should_not,
-        )
+        if not session.relevant:
+            session.relevant = [f"Drafted output for this job: {session.job}"]
+        if not session.not_relevant:
+            session.not_relevant = ["A 1200-word blog post about our product launch."]
+        try:
+            session.benchmarks = run_prove(
+                job=session.job,
+                when=session.when,
+                not_when=session.not_when,
+                should=session.should,
+                should_not=session.should_not,
+                relevant=session.relevant,
+                not_relevant=session.not_relevant,
+            )
+        except ProveCLIError as exc:
+            raise GateError("cli_failed", str(exc)) from exc
         session.proved = True
         session.step = "dispose" if continue_to_dispose else "prove"
         return session

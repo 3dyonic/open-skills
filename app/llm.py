@@ -3,16 +3,12 @@
 from __future__ import annotations
 
 import json
-import os
 from typing import Any
 
-import httpx
-
 from app.academy import AcademyCite
+from app.external_llm import anthropic_text
 from app.gate import Session
 from app.methods import ACADEMY_INDICATORS_URL, method_name
-
-ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 
 
 def _quotes_block(cite: AcademyCite, method_id: str) -> str:
@@ -96,35 +92,11 @@ def stub_prompts(session: Session) -> tuple[list[str], list[str]]:
     return should, should_not
 
 
-def _anthropic_text(prompt: str, *, timeout: float = 30.0) -> str | None:
-    key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    if not key:
-        return None
-    model = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
-    payload = {
-        "model": model,
-        "max_tokens": 400,
-        "messages": [{"role": "user", "content": prompt}],
-    }
-    headers = {
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-    }
-    try:
-        with httpx.Client(timeout=timeout) as client:
-            response = client.post(ANTHROPIC_URL, headers=headers, json=payload)
-            response.raise_for_status()
-            data = response.json()
-        chunks = [
-            block.get("text", "")
-            for block in data.get("content", [])
-            if block.get("type") == "text"
-        ]
-        text = "\n".join(chunks).strip()
-        return text or None
-    except Exception:
-        return None
+def stub_outputs(session: Session) -> tuple[list[str], list[str]]:
+    job = " ".join(session.job.split())
+    relevant = [f"Drafted output for this job: {job}"]
+    not_relevant = ["A 1200-word blog post about our product launch."]
+    return relevant, not_relevant
 
 
 def fill_section(session: Session, method_id: str, cite: AcademyCite) -> str:
@@ -139,7 +111,7 @@ def fill_section(session: Session, method_id: str, cite: AcademyCite) -> str:
         f"Not when: {session.not_when}\n"
         "Write a short section body (3–6 lines). No frontmatter. No chrome."
     )
-    text = _anthropic_text(prompt)
+    text = anthropic_text(prompt)
     return text or stub_fill(session, method_id, cite)
 
 
@@ -157,6 +129,12 @@ def draft_build(session: Session, cite: AcademyCite) -> Session:
             session.should = should
         if not session.should_not:
             session.should_not = should_not
+    if not session.relevant or not session.not_relevant:
+        relevant, not_relevant = stub_outputs(session)
+        if not session.relevant:
+            session.relevant = relevant
+        if not session.not_relevant:
+            session.not_relevant = not_relevant
     method_id = session.method or "description"
     if session.sections[method_id].status == "empty":
         session.sections[method_id].status = "filled"
@@ -176,7 +154,7 @@ def refine_prompts(session: Session, cite: AcademyCite) -> tuple[list[str], list
         f"Academy cite: {ACADEMY_INDICATORS_URL}\n"
         f"Excerpt: {cite.excerpt[:400]}"
     )
-    text = _anthropic_text(prompt)
+    text = anthropic_text(prompt)
     if text:
         try:
             start = text.find("{")

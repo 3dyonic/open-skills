@@ -69,6 +69,8 @@ class BuildIn(BaseModel):
     method: str | None = None
     should: list[str] | None = None
     should_not: list[str] | None = None
+    relevant: list[str] | None = None
+    not_relevant: list[str] | None = None
     depth: dict[str, bool] | None = None
     continue_to_prove: bool = False
     fill_action: str | None = None
@@ -79,6 +81,8 @@ class ProveIn(BaseModel):
     not_when: str | None = None
     should: list[str] | None = None
     should_not: list[str] | None = None
+    relevant: list[str] | None = None
+    not_relevant: list[str] | None = None
     continue_to_dispose: bool = False
 
 
@@ -138,6 +142,8 @@ def build(session_id: str, body: BuildIn) -> dict:
             method=body.method,
             should=body.should,
             should_not=body.should_not,
+            relevant=body.relevant,
+            not_relevant=body.not_relevant,
             depth=body.depth,
             continue_to_prove=body.continue_to_prove,
         )
@@ -156,6 +162,8 @@ def prove(session_id: str, body: ProveIn) -> dict:
             not_when=body.not_when,
             should=body.should,
             should_not=body.should_not,
+            relevant=body.relevant,
+            not_relevant=body.not_relevant,
             continue_to_dispose=body.continue_to_dispose,
         )
     except GateError as exc:

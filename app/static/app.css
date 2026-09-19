@@ -335,6 +335,11 @@ textarea {
   gap: 10px;
 }
 
+.bench-card .learn-kicker {
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
 .badge {
   display: inline-flex;
   width: fit-content;

@@ -14,6 +14,8 @@ def _built(store: Store, job: str = "Draft release notes from PR diffs for the c
         body="Draft the notes. Stay on the changelog unit.",
         should=["Draft release notes from this PR diff for the changelog."],
         should_not=["Write a blog post about our product launch."],
+        relevant=["Changelog notes from the PR diff."],
+        not_relevant=["A 1200-word blog post about our product launch."],
         continue_to_prove=True,
     )
     return session
